@@ -395,6 +395,7 @@ ssize_t RDMAConnectedSocketImpl::zero_copy_read(bufferptr &data)
     if (!loaded && i == 0) {
       // FIXME need to handle release
       // auto del = std::bind(&Chunk::post_srq, std::move(chunk), infiniband);
+
       size = chunk->bound;
       continue;
     }
