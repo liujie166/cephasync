@@ -726,8 +726,8 @@ char *Infiniband::MemoryManager::PoolAllocator::malloc(const size_type bytes)
     ch->bytes  = cct->_conf->ms_async_rdma_buffer_size;
     ch->offset = 0;
     ch->bptr = bufferptr(buffer::create(cct->_conf->ms_async_rdma_buffer_size));
-    ch->buffer = ch->data = reinterpret_cast<uintptr_t>(ch->bptr.c_str()); // TODO: refactor tx and remove buffer
-    ch->mr = ibv_reg_mr(manager->pd->pd, ch->buffer, bytes, IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_LOCAL_WRITE);
+    ch->buffer = ch->data = ch->bptr.c_str(); // TODO: refactor tx and remove buffer
+    ch->mr = ibv_reg_mr(manager->pd->pd, reinterpret_cast<uintptr_t>(ch->buffer), bytes, IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_LOCAL_WRITE);
     if (ch->mr == NULL) {
           lderr(cct) << __func__ << " failed to register " << dendl;
           manager->free(m);
@@ -750,7 +750,7 @@ void Infiniband::MemoryManager::PoolAllocator::free(char * const block)
   m->ctx->update_stats(-m->nbufs);
   for(unsigned i = 0; i < m->nbufs ; i++) {
       ibv_dereg_mr(m->chunks[i].mr);
-      (m->chunks[i].bptr).release();
+      (m->chunks[i].bptr).~bufferptr();
   }
     m->ctx->manager->free(m);
 }
