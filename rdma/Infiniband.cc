@@ -742,7 +742,7 @@ void Infiniband::MemoryManager::PoolAllocator::free(char * const block)
 {
   mem_info *m;
   Mutex::Locker l(lock);
-    
+  size_t rx_buf_size = sizeof(Chunk) + cct->_conf->ms_async_rdma_buffer_size;
   m = reinterpret_cast<mem_info *>(block);
   m->ctx->update_stats(-m->nbufs);
   Chunk *ch = m->chunks;
