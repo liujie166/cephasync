@@ -711,13 +711,7 @@ char *Infiniband::MemoryManager::PoolAllocator::malloc(const size_type bytes)
     return NULL;
   }
 
-  m->mr = ibv_reg_mr(manager->pd->pd, chunk_addr, bytes, IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_LOCAL_WRITE);
-  if (m->mr == NULL) {
-    lderr(cct) << __func__ << " failed to register " <<
-        bytes << " bytes of memory for " << nbufs << dendl;
-    manager->free(m);
-    return NULL;
-  }
+
 
   m->nbufs = nbufs;
   // save this chunk context
@@ -731,9 +725,14 @@ char *Infiniband::MemoryManager::PoolAllocator::malloc(const size_type bytes)
   for (unsigned i = 0; i < nbufs; i++) {
     ch->bytes  = cct->_conf->ms_async_rdma_buffer_size;
     ch->offset = 0;
-    ch->bptr = ptr(buffer::create(cct->_conf->ms_async_rdma_buffer_size));
-    ch->buffer = reinterpret_cast<uintptr_t>(ch->bptr->c_str()); // TODO: refactor tx and remove buffer
+    ch->bptr = bufferptr(buffer::create(cct->_conf->ms_async_rdma_buffer_size));
+    ch->data = reinterpret_cast<uintptr_t>(ch->bptr.c_str()); // TODO: refactor tx and remove buffer
     ch->mr = ibv_reg_mr(manager->pd->pd, ch->buffer, bytes, IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_LOCAL_WRITE);
+    if (ch->mr == NULL) {
+          lderr(cct) << __func__ << " failed to register " << dendl;
+          manager->free(m);
+          return NULL;
+    }
     ch->lkey = ch->mr->lkey;
     ch++;
   }
@@ -749,7 +748,7 @@ void Infiniband::MemoryManager::PoolAllocator::free(char * const block)
     
   m = reinterpret_cast<mem_info *>(block);
   m->ctx->update_stats(-m->nbufs);
-  for(int i = 0; i < m->nbufs ; i++) {
+  for(unsigned i = 0; i < m->nbufs ; i++) {
       ibv_dereg_mr(m->chunks[i].mr);
       (m->chunks[i].bptr).release();
   }
