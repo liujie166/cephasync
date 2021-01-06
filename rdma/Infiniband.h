@@ -212,7 +212,8 @@ class Infiniband {
       uint32_t bound = 0;
       uint32_t offset;
       bufferptr bptr;
-      char* data; // TODO: remove buffer/refactor TX
+      char* data;
+      char* buffer;// TODO: remove buffer/refactor TX
 
     };
 
