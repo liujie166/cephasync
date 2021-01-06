@@ -750,8 +750,8 @@ void Infiniband::MemoryManager::PoolAllocator::free(char * const block)
   m = reinterpret_cast<mem_info *>(block);
   m->ctx->update_stats(-m->nbufs);
   for(int i = 0; i < m->nbufs ; i++) {
-      ibv_dereg_mr(m->chunks[i]->mr);
-      (m->chunks[i]->bptr).release();
+      ibv_dereg_mr(m->chunks[i].mr);
+      (m->chunks[i].bptr).release();
   }
     m->ctx->manager->free(m);
 }
