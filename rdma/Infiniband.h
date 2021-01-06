@@ -266,7 +266,7 @@ class Infiniband {
         ibv_mr   *mr;
         MemPoolContext *ctx;
         unsigned nbufs;
-        Chunk chunks[0];
+        Chunk* chunks;
       };
      public:
       typedef std::size_t size_type;
