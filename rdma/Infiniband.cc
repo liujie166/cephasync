@@ -745,11 +745,13 @@ void Infiniband::MemoryManager::PoolAllocator::free(char * const block)
     
   m = reinterpret_cast<mem_info *>(block);
   m->ctx->update_stats(-m->nbufs);
+  Chunk *ch = m->chunks;
   for(unsigned i = 0; i < m->nbufs ; i++) {
-      ibv_dereg_mr(m->mr);
-      (m->chunks[i].bptr).~bufferptr();
+      (ch->bptr).~bufferptr();
+      ch = reinterpret_cast<Chunk *>(reinterpret_cast<char *>(ch) + rx_buf_size);
   }
-    m->ctx->manager->free(m);
+  ibv_dereg_mr(m->mr);
+  m->ctx->manager->free(m);
 }
 
 Infiniband::MemoryManager::MemoryManager(CephContext *c, Device *d, ProtectionDomain *p)
