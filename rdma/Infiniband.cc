@@ -706,7 +706,7 @@ char *Infiniband::MemoryManager::PoolAllocator::malloc(const size_type bytes)
 
   m = static_cast<mem_info *>(manager->malloc(sizeof(*m)));
   chunks = bufferptr(buffer::create(bytes));
-  m->chunks = chunks.c_str();
+  m->chunks = reinterpret_cast<Chunk *>(chunks.c_str());
   m->mr = ibv_reg_mr(manager->pd->pd, m->chunks, bytes, IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_LOCAL_WRITE);
   if (m->mr == NULL) {
       lderr(cct) << __func__ << " failed to register " <<
