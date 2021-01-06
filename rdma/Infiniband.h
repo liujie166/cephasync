@@ -211,8 +211,9 @@ class Infiniband {
       uint32_t bytes;
       uint32_t bound = 0;
       uint32_t offset;
+      bufferptr bptr;
       char* buffer; // TODO: remove buffer/refactor TX
-      char  data[0];
+
     };
 
     class Cluster {
