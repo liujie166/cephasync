@@ -689,7 +689,7 @@ char *Infiniband::MemoryManager::PoolAllocator::malloc(const size_type bytes)
 {
   mem_info *m;
   Chunk *ch;
-  bufferraw chunks;
+  bufferptr chunks;
   size_t rx_buf_size;
   unsigned nbufs;
   MemoryManager *manager;
@@ -705,8 +705,8 @@ char *Infiniband::MemoryManager::PoolAllocator::malloc(const size_type bytes)
     return NULL;
 
   m = static_cast<mem_info *>(manager->malloc(sizeof(*m)));
-  chunks = buffer::create(bytes);
-  m->chunks = chunks->data;
+  chunks = bufferptr(buffer::create(bytes));
+  m->chunks = chunks.c_str();
   m->mr = ibv_reg_mr(manager->pd->pd, m->chunks, bytes, IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_LOCAL_WRITE);
   if (m->mr == NULL) {
       lderr(cct) << __func__ << " failed to register " <<
@@ -724,12 +724,11 @@ char *Infiniband::MemoryManager::PoolAllocator::malloc(const size_type bytes)
 
   /* initialize chunks */
   ch = m->chunks;
-  bufferptr chunks_bptr = bufferptr(chunks);
   for (unsigned i = 0; i < nbufs; i++) {
     ch->bytes  = cct->_conf->ms_async_rdma_buffer_size;
     ch->offset = 0;
     ch->buffer = ch->data; // TODO: refactor tx and remove buffer
-    ch->bptr = bufferptr(chunks_bptr, (unsigned)rx_buf_size, (unsigned)rx_buf_size);
+    ch->bptr = bufferptr(chunks, (unsigned)rx_buf_size, (unsigned)rx_buf_size);
     ch->mr = m->mr;
     ch->lkey = ch->mr->lkey;
     ch++;
