@@ -731,7 +731,7 @@ char *Infiniband::MemoryManager::PoolAllocator::malloc(const size_type bytes)
     ch->bptr = bufferptr(chunks, (unsigned)rx_buf_size, (unsigned)rx_buf_size);
     ch->mr = m->mr;
     ch->lkey = ch->mr->lkey;
-    ch++;
+    ch = reinterpret_cast<Chunk *>(reinterpret_cast<char *>(ch) + rx_buf_size);
   }
 
   return reinterpret_cast<char *>(m->chunks);
