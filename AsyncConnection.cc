@@ -339,8 +339,12 @@ ssize_t AsyncConnection::zero_copy_read(unsigned len){
         ldout(async_msgr->cct, 1) << __func__ << " peer close file descriptor "
                                   << cs.fd() << dendl;
         return -1;
+    } else if (nread >0) {
+        if(nread == len){
+            return 0;
+        }
+        return nread;
     }
-    return nread;
 
 }
 void AsyncConnection::inject_delay() {
@@ -371,13 +375,23 @@ void AsyncConnection::process()
       case STATE_OPEN:
         {
           char tag = -1;
-          r = read_until(sizeof(tag), &tag);
+          r = zero_copy_read(sizeof(tag))
+
+          //r = read_until(sizeof(tag), &tag);
           if (r < 0) {
             ldout(async_msgr->cct, 1) << __func__ << " read tag failed" << dendl;
             goto fail;
           } else if (r > 0) {
             break;
           }
+          uintptr_t offset = 0;
+          std::list<bufferptr>::const_iterator it = imcoming_bl.buffers().begin();
+          while (it != pending_bl.buffers().end() && offset < sizeof(tag)) {
+              const uintptr_t addr = reinterpret_cast<uintptr_t>(it->c_str());
+              memcopy(&tag + offset, addr, it->length());
+              offset+=it->length();
+          }
+          imcoming_bl.clear();
 
           if (tag == CEPH_MSGR_TAG_KEEPALIVE) {
             ldout(async_msgr->cct, 20) << __func__ << " got KEEPALIVE" << dendl;
