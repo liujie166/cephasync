@@ -740,7 +740,7 @@ char *Infiniband::MemoryManager::PoolAllocator::malloc(const size_type bytes)
 void Infiniband::MemoryManager::PoolAllocator::free(char * const block)
 {
   Mutex::Locker l(lock);
-  mem_info* m = reinterpret_cast<mem_info *>(block) - 1;
+  mem_info* m = reinterpret_cast<mem_info *>(block);
   CephContext *cct = m->ctx->manager->cct;
 
   size_t rx_buf_size = sizeof(Chunk) + cct->_conf->ms_async_rdma_buffer_size;
