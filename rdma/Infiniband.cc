@@ -729,11 +729,6 @@ char *Infiniband::MemoryManager::PoolAllocator::malloc(const size_type bytes)
     ch->bytes  = cct->_conf->ms_async_rdma_buffer_size;
     ch->offset = 0;
     ch->bptr = bufferptr(chunks_bptr, (unsigned)rx_buf_size, (unsigned)rx_buf_size);
-      if (ch->bptr == NULL) {
-          lderr(cct) << __func__ << " failed !!! bufferptr " << dendl;
-          manager->free(m);
-          return NULL;
-      }
     ch->buffer = ch->data;
     ch = reinterpret_cast<Chunk *>(reinterpret_cast<char *>(ch) + rx_buf_size);
   }
@@ -939,6 +934,7 @@ void Infiniband::init()
   srq = create_shared_receive_queue(rx_queue_len, MAX_SHARED_RX_SGE_COUNT);
 
   post_chunks_to_srq(rx_queue_len); //add to srq
+	ldout(cct, 0) << __func__ << " init successful "  << dendl;
 }
 
 Infiniband::~Infiniband()
