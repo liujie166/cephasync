@@ -194,6 +194,7 @@ class RDMAConnectedSocketImpl : public ConnectedSocketImpl {
 
   void notify();
   ssize_t read_buffers(char* buf, size_t len);
+  ssize_t read_buffers2(bufferlist &bl, size_t len);
   int post_work_request(std::vector<Chunk*>&);
 
  public:
