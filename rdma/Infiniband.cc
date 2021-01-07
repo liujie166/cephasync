@@ -727,8 +727,8 @@ char *Infiniband::MemoryManager::PoolAllocator::malloc(const size_type bytes)
     ch->lkey = m->mr->lkey;
     ch->bytes  = cct->_conf->ms_async_rdma_buffer_size;
     ch->offset = 0;
-    ch->bptr = bufferptr(chunks_bptr, (unsigned)chunks_offset, (unsigned)rx_buf_size);
-    chunks_offset += (rx_buf_size + sizeof(Chunk));
+    ch->bptr = bufferptr(chunks_bptr, (unsigned)chunks_offset, (unsigned)cct->_conf->ms_async_rdma_buffer_size);
+    chunks_offset += rx_buf_size;
     ch->buffer = ch->data;
     ch = reinterpret_cast<Chunk *>(reinterpret_cast<char *>(ch) + rx_buf_size);
   }
