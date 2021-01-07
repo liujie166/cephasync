@@ -683,13 +683,12 @@ void *Infiniband::MemoryManager::mem_pool::slow_malloc()
 
 Infiniband::MemoryManager::MemPoolContext *Infiniband::MemoryManager::PoolAllocator::g_ctx = nullptr;
 Mutex Infiniband::MemoryManager::PoolAllocator::lock("pool-alloc-lock");
-bufferptr chunks_bptr;
-mem_info *m;
+
 // lock is taken by mem_pool::slow_malloc()
 char *Infiniband::MemoryManager::PoolAllocator::malloc(const size_type bytes)
 {
   Chunk *ch;
-
+  bufferptr chunks_bptr;
   size_t rx_buf_size;
   unsigned nbufs;
   MemoryManager *manager;
