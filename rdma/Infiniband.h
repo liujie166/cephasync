@@ -270,10 +270,11 @@ class Infiniband {
      public:
       typedef std::size_t size_type;
       typedef std::ptrdiff_t difference_type;
-      struct mem_info* m;
+
       static char * malloc(const size_type bytes);
       static void free(char * const block);
 
+      static struct mem_info* m;
       static MemPoolContext  *g_ctx;
       static Mutex lock;
     };
