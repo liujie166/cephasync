@@ -751,8 +751,6 @@ void Infiniband::MemoryManager::PoolAllocator::free(char * const block)
   for(unsigned i = 0; i < m->nbufs ; i++) {
       ldout(cct, 0) << __func__ << " before " << i << " time _raw->nref = " << ch->bptr.raw_nref() << dendl;
       (ch->bptr).~bufferptr();
-
-      ldout(cct, 0) << __func__ << " after " << i << " time _raw->nref = " << ch->bptr.raw_nref()  << dendl;
       ch = reinterpret_cast<Chunk *>(reinterpret_cast<char *>(ch) + rx_buf_size);
   }
   ldout(cct, 0) << __func__ << " before free m" <<  dendl;
