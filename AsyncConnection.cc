@@ -386,9 +386,9 @@ void AsyncConnection::process()
           }
           uintptr_t offset = 0;
           std::list<bufferptr>::const_iterator it = imcoming_bl.buffers().begin();
-          while (it != pending_bl.buffers().end() && offset < sizeof(tag)) {
+          while (it != imcoming_bl.buffers().end() && offset < sizeof(tag)) {
               const uintptr_t addr = reinterpret_cast<uintptr_t>(it->c_str());
-              memcopy(&tag + offset, addr, it->length());
+              memcpy(&tag + offset, addr, it->length());
               offset+=it->length();
           }
           imcoming_bl.clear();
