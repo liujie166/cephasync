@@ -725,15 +725,11 @@ char *Infiniband::MemoryManager::PoolAllocator::malloc(const size_type bytes)
   /* initialize chunks */
   ch = m->chunks;
   for (unsigned i = 0; i < nbufs; i++) {
-    ch->lkey = ch->mr->lkey;
+    ch->lkey = m->mr->lkey;
     ch->bytes  = cct->_conf->ms_async_rdma_buffer_size;
     ch->offset = 0;
     ch->bptr = bufferptr(chunks_bptr, (unsigned)rx_buf_size, (unsigned)rx_buf_size);
-      if (ch->bptr == NULL) {
-          lderr(cct) << __func__ << " failed !!! bufferptr " << dendl;
-          manager->free(m);
-          return NULL;
-      }
+
     ch->buffer = ch->data;
     ch = reinterpret_cast<Chunk *>(reinterpret_cast<char *>(ch) + rx_buf_size);
   }
