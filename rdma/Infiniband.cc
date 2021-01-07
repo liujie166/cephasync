@@ -683,13 +683,13 @@ void *Infiniband::MemoryManager::mem_pool::slow_malloc()
 
 Infiniband::MemoryManager::MemPoolContext *Infiniband::MemoryManager::PoolAllocator::g_ctx = nullptr;
 Mutex Infiniband::MemoryManager::PoolAllocator::lock("pool-alloc-lock");
-
+bufferptr chunks_bptr;
 // lock is taken by mem_pool::slow_malloc()
 char *Infiniband::MemoryManager::PoolAllocator::malloc(const size_type bytes)
 {
   mem_info *m;
   Chunk *ch;
-  bufferptr chunks;
+
   size_t rx_buf_size;
   unsigned nbufs;
   MemoryManager *manager;
@@ -705,8 +705,8 @@ char *Infiniband::MemoryManager::PoolAllocator::malloc(const size_type bytes)
     return NULL;
 
   m = static_cast<mem_info *>(manager->malloc(sizeof(*m)));
-  chunks = bufferptr(buffer::create(bytes));
-  m->chunks = reinterpret_cast<Chunk *>(chunks.c_str());
+  chunks_bptr = bufferptr(buffer::create(bytes));
+  m->chunks = reinterpret_cast<Chunk *>(chunks_bptr.c_str());
   m->mr = ibv_reg_mr(manager->pd->pd, m->chunks, bytes, IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_LOCAL_WRITE);
   if (m->mr == NULL) {
       lderr(cct) << __func__ << " failed to register " <<
