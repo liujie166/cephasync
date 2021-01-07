@@ -677,7 +677,6 @@ void *Infiniband::MemoryManager::mem_pool::slow_malloc()
   PoolAllocator::g_ctx = ctx;
   // this will trigger pool expansion via PoolAllocator::malloc()
   p = boost::pool<PoolAllocator>::malloc();
-  PoolAllocator::g_ctx = nullptr;
   return p;
 }
 
@@ -757,6 +756,7 @@ void Infiniband::MemoryManager::PoolAllocator::free(char * const block)
   }
   ldout(cct, 0) << __func__ << " before free m" <<  dendl;
   m->ctx->manager->free(m);
+    PoolAllocator::g_ctx = nullptr;
 }
 
 Infiniband::MemoryManager::MemoryManager(CephContext *c, Device *d, ProtectionDomain *p)
