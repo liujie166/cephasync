@@ -722,13 +722,13 @@ char *Infiniband::MemoryManager::PoolAllocator::malloc(const size_type bytes)
 
   /* initialize chunks */
   ch = m->chunks;
-  unsigned  chunks_offset = sizeof(mem_info);
+  unsigned  chunks_offset = sizeof(mem_info) + sizeof(Chunk);
   for (unsigned i = 0; i < nbufs; i++) {
     ch->lkey = m->mr->lkey;
     ch->bytes  = cct->_conf->ms_async_rdma_buffer_size;
     ch->offset = 0;
     ch->bptr = bufferptr(chunks_bptr, (unsigned)chunks_offset, (unsigned)rx_buf_size);
-    chunks_offset += rx_buf_size;
+    chunks_offset += (rx_buf_size + sizeof(Chunk));
     ch->buffer = ch->data;
     ch = reinterpret_cast<Chunk *>(reinterpret_cast<char *>(ch) + rx_buf_size);
   }
@@ -741,19 +741,9 @@ void Infiniband::MemoryManager::PoolAllocator::free(char * const block)
 {
   Mutex::Locker l(lock);
   mem_info* m = reinterpret_cast<mem_info *>(block) - 1;
-  CephContext *cct = m->ctx->manager->cct;
-
-  size_t rx_buf_size = sizeof(Chunk) + cct->_conf->ms_async_rdma_buffer_size;
   m->ctx->update_stats(-m->nbufs);
-  Chunk *ch = m->chunks;
-  ldout(cct, 0) << __func__ << " before dereg" <<  dendl;
+
   ibv_dereg_mr(m->mr);
-  /*for(unsigned i = 0; i < m->nbufs ; i++) {
-      ldout(cct, 0) << __func__ << " before " << i << " time _raw->nref = " << ch->bptr.raw_nref() << dendl;
-      (ch->bptr).~bufferptr();
-      ch = reinterpret_cast<Chunk *>(reinterpret_cast<char *>(ch) + rx_buf_size);
-  }*/
-  ldout(cct, 0) << __func__ << " before free m" <<  dendl;
   m->ctx->manager->free(m);
 }
 
@@ -1010,7 +1000,7 @@ int Infiniband::post_chunks_to_srq(int num)
       break;
     }
 
-    isge[i].addr = reinterpret_cast<uint64_t>(chunk->data);
+    isge[i].addr = reinterpret_cast<uint64_t>(chunk->bptr.c_str());
     isge[i].length = chunk->bytes;
     isge[i].lkey = chunk->lkey;
 
