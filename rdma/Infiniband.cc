@@ -751,7 +751,7 @@ char *Infiniband::MemoryManager::PoolAllocator::malloc(const size_type bytes)
     ch->offset = 0;
     buffer::raw chunk_raw(chunk_offset, (unsigned)cct->_conf->ms_async_rdma_buffer_size);
     ch->bptr = bufferptr(&chunk_raw);
-    chunks_base += rx_buf_size;
+    chunk_offset += rx_buf_size;
     ch->buffer = ch->data;
     ch = reinterpret_cast<Chunk *>(reinterpret_cast<char *>(ch) + rx_buf_size);
   }
