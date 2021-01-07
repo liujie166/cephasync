@@ -746,12 +746,15 @@ void Infiniband::MemoryManager::PoolAllocator::free(char * const block)
   m = reinterpret_cast<mem_info *>(block);
   m->ctx->update_stats(-m->nbufs);
   Chunk *ch = m->chunks;
+  ldout(cct, 0) << __func__ << " before dereg" <<  dendl;
   ibv_dereg_mr(m->mr);
   for(unsigned i = 0; i < m->nbufs ; i++) {
+      ldout(cct, 0) << __func__ << " before " << i << " time ~bufferptr" << dendl;
       (ch->bptr).~bufferptr();
+      ldout(cct, 0) << __func__ << " before " << i << " time ~bufferptr" << dendl;
       ch = reinterpret_cast<Chunk *>(reinterpret_cast<char *>(ch) + rx_buf_size);
   }
-
+  ldout(cct, 0) << __func__ << " before free m" <<  dendl;
   m->ctx->manager->free(m);
 }
 
