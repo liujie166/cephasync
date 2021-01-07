@@ -740,7 +740,9 @@ char *Infiniband::MemoryManager::PoolAllocator::malloc(const size_type bytes)
 void Infiniband::MemoryManager::PoolAllocator::free(char * const block)
 {
   Mutex::Locker l(lock);
-  size_t rx_buf_size = sizeof(Chunk) + m->ctx->_conf->ms_async_rdma_buffer_size;
+  CephContext *cct = m->ctx->manager->cct;
+
+  size_t rx_buf_size = sizeof(Chunk) + cct->_conf->ms_async_rdma_buffer_size;
   m->ctx->update_stats(-m->nbufs);
   Chunk *ch = m->chunks;
   ldout(cct, 0) << __func__ << " before dereg" <<  dendl;
