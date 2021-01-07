@@ -335,7 +335,87 @@ ssize_t RDMAConnectedSocketImpl::read(char* buf, size_t len)
     return -error;
   return read == 0 ? -EAGAIN : read;
 }
+ssize_t RDMAConnectedSocketImpl::zero_copy_read(bufferlist& bl, size_t len)
+{
+    uint64_t i = 0;
+    int r = ::read(notify_fd, &i, sizeof(i));
+    ldout(cct, 20) << __func__ << " notify_fd : " << i << " in " << my_msg.qpn << " r = " << r << dendl;
 
+    if (!active) {
+        ldout(cct, 1) << __func__ << " when ib not active. len: " << len << dendl;
+        return -EAGAIN;
+    }
+
+    if (0 == connected) {
+        ldout(cct, 1) << __func__ << " when ib not connected. len: " << len <<dendl;
+        return -EAGAIN;
+    }
+    ssize_t read = 0;
+    if (!buffers.empty())
+        read = read_buffers2(bl,len);
+
+    std::vector<ibv_wc> cqe;
+    get_wc(cqe);
+    if (cqe.empty()) {
+        if (!buffers.empty()) {
+            notify();
+        }
+        if (read > 0) {
+            return read;
+        }
+        if (error) {
+            return -error;
+        } else {
+            return -EAGAIN;
+        }
+    }
+
+    ldout(cct, 20) << __func__ << " poll queue got " << cqe.size() << " responses. QP: " << my_msg.qpn << dendl;
+    for (size_t i = 0; i < cqe.size(); ++i) {
+        ibv_wc* response = &cqe[i];
+        assert(response->status == IBV_WC_SUCCESS);
+        Chunk* chunk = reinterpret_cast<Chunk *>(response->wr_id);
+        ldout(cct, 25) << __func__ << " chunk length: " << response->byte_len << " bytes." << chunk << dendl;
+        chunk->prepare_read(response->byte_len);
+        worker->perf_logger->inc(l_msgr_rdma_rx_bytes, response->byte_len);
+        if (response->byte_len == 0) {
+            dispatcher->perf_logger->inc(l_msgr_rdma_rx_fin);
+            if (connected) {
+                error = ECONNRESET;
+                ldout(cct, 20) << __func__ << " got remote close msg..." << dendl;
+            }
+            //dispatcher->post_chunk_to_pool(chunk);
+        } else {
+            if (read == (ssize_t)len) {
+                buffers.push_back(chunk);
+                ldout(cct, 25) << __func__ << " buffers add a chunk: " << response->byte_len << dendl;
+            } else if (read + response->byte_len > (ssize_t)len) {
+                read += chunk->zero_copy_read(bl, (ssize_t)len-read);
+                buffers.push_back(chunk);
+                ldout(cct, 25) << __func__ << " buffers add a chunk: " << chunk->get_offset() << ":" << chunk->get_bound() << dendl;
+            } else {
+                read += chunk->zero_copy_read(bl, response->byte_len);
+                //dispatcher->post_chunk_to_pool(chunk);
+            }
+        }
+    }
+
+    worker->perf_logger->inc(l_msgr_rdma_rx_chunks, cqe.size());
+    if (is_server && connected == 0) {
+        ldout(cct, 20) << __func__ << " we do not need last handshake, QP: " << my_msg.qpn << " peer QP: " << peer_msg.qpn << dendl;
+        connected = 1; //if so, we don't need the last handshake
+        cleanup();
+        submit(false);
+    }
+
+    if (!buffers.empty()) {
+        notify();
+    }
+
+    if (read == 0 && error)
+        return -error;
+    return read == 0 ? -EAGAIN : read;
+}
 ssize_t RDMAConnectedSocketImpl::read_buffers(char* buf, size_t len)
 {
   size_t read = 0, tmp = 0;
@@ -359,8 +439,30 @@ ssize_t RDMAConnectedSocketImpl::read_buffers(char* buf, size_t len)
   ldout(cct, 25) << __func__ << " got " << read  << " bytes, buffers size: " << buffers.size() << dendl;
   return read;
 }
+ssize_t RDMAConnectedSocketImpl::read_buffers2(bufferlist &bl, size_t len)
+{
+    size_t read = 0, tmp = 0;
+    auto c = buffers.begin();
+    for (; c != buffers.end() ; ++c) {
+        tmp = (*c)->zero_copy_read(bl, len-read);
+        read += tmp;
+        ldout(cct, 25) << __func__ << " this iter read: " << tmp << " bytes." << " offset: " << (*c)->get_offset() << " ,bound: " << (*c)->get_bound()  << ". Chunk:" << *c  << dendl;
+        if ((*c)->over()) {
+            //dispatcher->post_chunk_to_pool(*c);
+            ldout(cct, 25) << __func__ << " one chunk over." << dendl;
+        }
+        if (read == len) {
+            break;
+        }
+    }
 
-ssize_t RDMAConnectedSocketImpl::zero_copy_read(bufferptr &data)
+    if (c != buffers.end() && (*c)->over())
+        ++c;
+    buffers.erase(buffers.begin(), c);
+    ldout(cct, 25) << __func__ << " got " << read  << " bytes, buffers size: " << buffers.size() << dendl;
+    return read;
+}
+/*ssize_t RDMAConnectedSocketImpl::zero_copy_read(bufferptr &data)
 {
   if (error)
     return -error;
@@ -406,7 +508,7 @@ ssize_t RDMAConnectedSocketImpl::zero_copy_read(bufferptr &data)
   if (size == 0)
     return -EAGAIN;
   return size;
-}
+}*/
 
 ssize_t RDMAConnectedSocketImpl::send(bufferlist &bl, bool more)
 {

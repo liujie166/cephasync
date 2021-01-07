@@ -312,7 +312,37 @@ ssize_t AsyncConnection::read_until(unsigned len, char *p)
                              << len - state_offset << " bytes" << dendl;
   return len - state_offset;
 }
+ssize_t AsyncConnection::zero_copy_read(unsigned len){
+    ldout(async_msgr->cct, 25) << __func__ << " len is " << len << dendl;
 
+    if (async_msgr->cct->_conf->ms_inject_socket_failures && cs) {
+        if (rand() % async_msgr->cct->_conf->ms_inject_socket_failures == 0) {
+            ldout(async_msgr->cct, 0) << __func__ << " injecting socket failure" << dendl;
+            cs.shutdown();
+        }
+    }
+
+    ssize_t nread;
+    again:
+    nread = cs.zero_copy_read(imcoming_bl, len);
+    if (nread < 0) {
+        if (nread == -EAGAIN) {
+            nread = 0;
+        } else if (nread == -EINTR) {
+            goto again;
+        } else {
+            ldout(async_msgr->cct, 1) << __func__ << " reading from fd=" << cs.fd()
+                                      << " : "<< strerror(nread) << dendl;
+            return -1;
+        }
+    } else if (nread == 0) {
+        ldout(async_msgr->cct, 1) << __func__ << " peer close file descriptor "
+                                  << cs.fd() << dendl;
+        return -1;
+    }
+    return nread;
+
+}
 void AsyncConnection::inject_delay() {
   if (async_msgr->cct->_conf->ms_inject_internal_delays) {
     ldout(async_msgr->cct, 10) << __func__ << " sleep for " << 

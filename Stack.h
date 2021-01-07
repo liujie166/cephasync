@@ -93,8 +93,8 @@ class ConnectedSocket {
   /// Gets the input stream.
   ///
   /// Gets an object returning data sent from the remote endpoint.
-  ssize_t zero_copy_read(bufferptr &data) {
-    return _csi->zero_copy_read(data);
+  ssize_t zero_copy_read(bufferlist &data, size_t len) {
+    return _csi->zero_copy_read(data, len);
   }
   /// Gets the output stream.
   ///

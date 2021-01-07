@@ -303,6 +303,7 @@ class AsyncConnection : public Connection {
 
   // lockfree, only used in own thread
   bufferlist outcoming_bl;
+  bufferlist imcoming_bl;
   bool open_write = false;
 
   std::mutex write_lock;
