@@ -677,16 +677,17 @@ void *Infiniband::MemoryManager::mem_pool::slow_malloc()
   PoolAllocator::g_ctx = ctx;
   // this will trigger pool expansion via PoolAllocator::malloc()
   p = boost::pool<PoolAllocator>::malloc();
+  PoolAllocator::g_ctx = nullptr;
   return p;
 }
 
 Infiniband::MemoryManager::MemPoolContext *Infiniband::MemoryManager::PoolAllocator::g_ctx = nullptr;
 Mutex Infiniband::MemoryManager::PoolAllocator::lock("pool-alloc-lock");
 bufferptr chunks_bptr;
+mem_info *m;
 // lock is taken by mem_pool::slow_malloc()
 char *Infiniband::MemoryManager::PoolAllocator::malloc(const size_type bytes)
 {
-  mem_info *m;
   Chunk *ch;
 
   size_t rx_buf_size;
@@ -739,11 +740,8 @@ char *Infiniband::MemoryManager::PoolAllocator::malloc(const size_type bytes)
 
 void Infiniband::MemoryManager::PoolAllocator::free(char * const block)
 {
-    CephContext *cct = g_ctx->manager->cct;
-  mem_info *m;
   Mutex::Locker l(lock);
-  size_t rx_buf_size = sizeof(Chunk) + cct->_conf->ms_async_rdma_buffer_size;
-  m = reinterpret_cast<mem_info *>(block);
+  size_t rx_buf_size = sizeof(Chunk) + m->ctx->_conf->ms_async_rdma_buffer_size;
   m->ctx->update_stats(-m->nbufs);
   Chunk *ch = m->chunks;
   ldout(cct, 0) << __func__ << " before dereg" <<  dendl;
@@ -756,7 +754,6 @@ void Infiniband::MemoryManager::PoolAllocator::free(char * const block)
   }
   ldout(cct, 0) << __func__ << " before free m" <<  dendl;
   m->ctx->manager->free(m);
-    PoolAllocator::g_ctx = nullptr;
 }
 
 Infiniband::MemoryManager::MemoryManager(CephContext *c, Device *d, ProtectionDomain *p)
