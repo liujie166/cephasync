@@ -343,8 +343,8 @@ ssize_t AsyncConnection::zero_copy_read(unsigned len){
         if(nread == len){
             return 0;
         }
-        return nread;
     }
+    return nread;
 
 }
 void AsyncConnection::inject_delay() {
