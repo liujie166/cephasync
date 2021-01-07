@@ -526,6 +526,24 @@ uint32_t Infiniband::MemoryManager::Chunk::read(char* buf, uint32_t len)
   }
 }
 
+uint32_t Infiniband::MemoryManager::Chunk::zero_copy_read(bufferlist &bl, uint32_t len)
+{
+    uint32_t left = bound - offset;
+    if (left >= len) {
+        //memcpy(buf, buffer+offset, len);
+        bufferptr *new_bptr = new bufferlist(bptr, (unsigned)offset, len);
+        bl->push_back(new_bptr);
+        offset += len;
+        return len;
+    } else {
+        //memcpy(buf, buffer+offset, left);
+        bufferptr *new_bptr = new bufferlist(bptr, (unsigned)offset, left);
+        bl->push_back(new_bptr);
+        offset = 0;
+        bound = 0;
+        return left;
+    }
+}
 uint32_t Infiniband::MemoryManager::Chunk::write(char* buf, uint32_t len)
 {
   uint32_t left = bytes - offset;
@@ -703,8 +721,12 @@ char *Infiniband::MemoryManager::PoolAllocator::malloc(const size_type bytes)
 
   if (!g_ctx->can_alloc(nbufs))
     return NULL;
-  chunks_bptr = bufferptr(buffer::create(bytes + sizeof(*m)));
-  m = reinterpret_cast<mem_info *>(chunks_bptr.c_str());
+  m = static_cast<mem_info *>(manager->malloc(bytes + sizeof(*m)));
+  if (!m) {
+     lderr(cct) << __func__ << " failed to allocate " << bytes << " + " << sizeof(*m) << " bytes of memory for " << nbufs << dendl;
+     return NULL;
+  }
+
   m->mr = ibv_reg_mr(manager->pd->pd, m->chunks, bytes, IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_LOCAL_WRITE);
   if (m->mr == NULL) {
       lderr(cct) << __func__ << " failed to register " <<
@@ -722,13 +744,14 @@ char *Infiniband::MemoryManager::PoolAllocator::malloc(const size_type bytes)
 
   /* initialize chunks */
   ch = m->chunks;
-  unsigned  chunks_offset = sizeof(mem_info) + sizeof(Chunk);
+  char *chunk_base = reinterpret_cast<char *>(ch) + sizeof(Chunk);
   for (unsigned i = 0; i < nbufs; i++) {
     ch->lkey = m->mr->lkey;
     ch->bytes  = cct->_conf->ms_async_rdma_buffer_size;
     ch->offset = 0;
-    ch->bptr = bufferptr(chunks_bptr, (unsigned)chunks_offset, (unsigned)cct->_conf->ms_async_rdma_buffer_size);
-    chunks_offset += rx_buf_size;
+    buffer::raw chunk_raw(chunk_base, (unsigned)cct->_conf->ms_async_rdma_buffer_size)
+    ch->bptr = bufferptr(&chunk_raw);
+    chunks_base += rx_buf_size;
     ch->buffer = ch->data;
     ch = reinterpret_cast<Chunk *>(reinterpret_cast<char *>(ch) + rx_buf_size);
   }

@@ -200,6 +200,7 @@ class Infiniband {
       void prepare_read(uint32_t b);
       uint32_t get_bound();
       uint32_t read(char* buf, uint32_t len);
+      uint32_t zero_copy_read(bufferlist &bl, uint32_t len;
       uint32_t write(char* buf, uint32_t len);
       bool full();
       bool over();
