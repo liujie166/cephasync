@@ -728,7 +728,7 @@ char *Infiniband::MemoryManager::PoolAllocator::malloc(const size_type bytes)
     ch->bytes  = cct->_conf->ms_async_rdma_buffer_size;
     ch->offset = 0;
     ch->buffer = ch->data; // TODO: refactor tx and remove buffer
-    ch->bptr = bufferptr(chunks, (unsigned)rx_buf_size, (unsigned)rx_buf_size);
+    ch->bptr = bufferptr(chunks_bptr, (unsigned)rx_buf_size, (unsigned)rx_buf_size);
     ch->mr = m->mr;
     ch->lkey = ch->mr->lkey;
     ch = reinterpret_cast<Chunk *>(reinterpret_cast<char *>(ch) + rx_buf_size);
