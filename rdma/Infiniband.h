@@ -265,7 +265,7 @@ class Infiniband {
         ibv_mr   *mr;
         MemPoolContext *ctx;
         unsigned nbufs;
-        Chunk* chunks;
+        Chunk chunks[0];
       };
      public:
       typedef std::size_t size_type;
@@ -274,7 +274,7 @@ class Infiniband {
       static char * malloc(const size_type bytes);
       static void free(char * const block);
 
-      static mem_info* m;
+      //static mem_info* m;
       static MemPoolContext  *g_ctx;
       static Mutex lock;
     };

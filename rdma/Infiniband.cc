@@ -683,11 +683,12 @@ void *Infiniband::MemoryManager::mem_pool::slow_malloc()
 
 Infiniband::MemoryManager::MemPoolContext *Infiniband::MemoryManager::PoolAllocator::g_ctx = nullptr;
 Mutex Infiniband::MemoryManager::PoolAllocator::lock("pool-alloc-lock");
-Infiniband::MemoryManager::PoolAllocator::mem_info *Infiniband::MemoryManager::PoolAllocator::m = nullptr;
+//Infiniband::MemoryManager::PoolAllocator::mem_info *Infiniband::MemoryManager::PoolAllocator::m = nullptr;
 // lock is taken by mem_pool::slow_malloc()
 char *Infiniband::MemoryManager::PoolAllocator::malloc(const size_type bytes)
 {
   Chunk *ch;
+  mem_info *m;
   bufferptr chunks_bptr;
   size_t rx_buf_size;
   unsigned nbufs;
@@ -702,10 +703,8 @@ char *Infiniband::MemoryManager::PoolAllocator::malloc(const size_type bytes)
 
   if (!g_ctx->can_alloc(nbufs))
     return NULL;
-
-  m = static_cast<mem_info *>(manager->malloc(sizeof(*m)));
-  chunks_bptr = bufferptr(buffer::create(bytes));
-  m->chunks = reinterpret_cast<Chunk *>(chunks_bptr.c_str());
+  chunks_bptr = bufferptr(buffer::create(bytes + sizeof(*m)));
+  m = reinterpret_cast<mem_info *>(chunks_bptr.c_str());
   m->mr = ibv_reg_mr(manager->pd->pd, m->chunks, bytes, IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_LOCAL_WRITE);
   if (m->mr == NULL) {
       lderr(cct) << __func__ << " failed to register " <<
@@ -723,12 +722,13 @@ char *Infiniband::MemoryManager::PoolAllocator::malloc(const size_type bytes)
 
   /* initialize chunks */
   ch = m->chunks;
+  unsigned  chunks_offset = sizeof(mem_info);
   for (unsigned i = 0; i < nbufs; i++) {
     ch->lkey = m->mr->lkey;
     ch->bytes  = cct->_conf->ms_async_rdma_buffer_size;
     ch->offset = 0;
-    ch->bptr = bufferptr(chunks_bptr, (unsigned)rx_buf_size, (unsigned)rx_buf_size);
-
+    ch->bptr = bufferptr(chunks_bptr, (unsigned)chunks_offset, (unsigned)rx_buf_size);
+    chunks_offset += rx_buf_size;
     ch->buffer = ch->data;
     ch = reinterpret_cast<Chunk *>(reinterpret_cast<char *>(ch) + rx_buf_size);
   }
@@ -750,7 +750,7 @@ void Infiniband::MemoryManager::PoolAllocator::free(char * const block)
   for(unsigned i = 0; i < m->nbufs ; i++) {
       ldout(cct, 0) << __func__ << " before " << i << " time ~bufferptr" << dendl;
       (ch->bptr).~bufferptr();
-      ldout(cct, 0) << __func__ << " before " << i << " time ~bufferptr" << dendl;
+      ldout(cct, 0) << __func__ << " after " << i << " time ~bufferptr" << dendl;
       ch = reinterpret_cast<Chunk *>(reinterpret_cast<char *>(ch) + rx_buf_size);
   }
   ldout(cct, 0) << __func__ << " before free m" <<  dendl;
