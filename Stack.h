@@ -28,7 +28,7 @@ class ConnectedSocketImpl {
   virtual ~ConnectedSocketImpl() {}
   virtual int is_connected() = 0;
   virtual ssize_t read(char*, size_t) = 0;
-  virtual ssize_t zero_copy_read(bufferptr&) = 0;
+  virtual ssize_t zero_copy_read(bufferlist&, size_t) = 0;
   virtual ssize_t send(bufferlist &bl, bool more) = 0;
   virtual void shutdown() = 0;
   virtual void close() = 0;
