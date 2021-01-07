@@ -274,7 +274,7 @@ class Infiniband {
       static char * malloc(const size_type bytes);
       static void free(char * const block);
 
-      static struct mem_info* m;
+      static mem_info* m;
       static MemPoolContext  *g_ctx;
       static Mutex lock;
     };
