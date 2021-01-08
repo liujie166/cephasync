@@ -323,29 +323,26 @@ ssize_t AsyncConnection::zero_copy_read(unsigned len){
     }
 
     ssize_t nread;
-    do {
-        again:
-        nread = cs.zero_copy_read(imcoming_bl, len);
-        if (nread < 0) {
-            if (nread == -EAGAIN) {
-                nread = 0;
-            } else if (nread == -EINTR) {
-                goto again;
-            } else {
-                ldout(async_msgr->cct, 1) << __func__ << " reading from fd=" << cs.fd()
-                                          << " : " << strerror(nread) << dendl;
-                return -1;
-            }
-        } else if (nread == 0) {
-            ldout(async_msgr->cct, 1) << __func__ << " peer close file descriptor "
-                                      << cs.fd() << dendl;
+    again:
+    nread = cs.zero_copy_read(imcoming_bl, len);
+    if (nread < 0) {
+        if (nread == -EAGAIN) {
+            goto again;
+        } else if (nread == -EINTR) {
+            goto again;
+        } else {
+            ldout(async_msgr->cct, 1) << __func__ << " reading from fd=" << cs.fd()
+                                      << " : "<< strerror(nread) << dendl;
             return -1;
-        } else if (nread > 0) {
-            if (nread == len) {
-                return 0;
-            }
         }
-    }while (nread > 0);
+    } else if (nread == 0) {
+        ldout(async_msgr->cct, 1) << __func__ << " peer close file descriptor "
+                                  << cs.fd() << dendl;
+        return -1;
+    } else if(nread > 0){
+        if(nread == len)
+            return 0;
+    }
     return nread;
 
 }
