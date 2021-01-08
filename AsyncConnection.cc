@@ -389,6 +389,7 @@ void AsyncConnection::process()
           while (it != imcoming_bl.buffers().end() && offset < sizeof(tag)) {
               const char * addr = it->c_str();
               memcpy(&tag + offset, addr, it->length());
+              ldout(async_msgr->cct, 0) << __func__ << " imcoming bptr data size = " << it->length() << dendl;
               offset+=it->length();
           }
           imcoming_bl.clear();
