@@ -375,7 +375,7 @@ ssize_t RDMAConnectedSocketImpl::zero_copy_read(bufferlist& bl, size_t len)
         ibv_wc* response = &cqe[i];
         assert(response->status == IBV_WC_SUCCESS);
         Chunk* chunk = reinterpret_cast<Chunk *>(response->wr_id);
-        ldout(cct, 25) << __func__ << " chunk length: " << response->byte_len << " bytes." << chunk << dendl;
+        ldout(cct, 20) << __func__ << " chunk length: " << response->byte_len << " bytes." << chunk << dendl;
         chunk->prepare_read(response->byte_len);
         worker->perf_logger->inc(l_msgr_rdma_rx_bytes, response->byte_len);
         if (response->byte_len == 0) {
@@ -388,11 +388,11 @@ ssize_t RDMAConnectedSocketImpl::zero_copy_read(bufferlist& bl, size_t len)
         } else {
             if (read == (ssize_t)len) {
                 buffers.push_back(chunk);
-                ldout(cct, 25) << __func__ << " buffers add a chunk: " << response->byte_len << dendl;
+                ldout(cct, 20) << __func__ << " buffers add a chunk: " << response->byte_len << dendl;
             } else if (read + response->byte_len > (ssize_t)len) {
                 read += chunk->zero_copy_read(bl, (ssize_t)len-read);
                 buffers.push_back(chunk);
-                ldout(cct, 25) << __func__ << " buffers add a chunk: " << chunk->get_offset() << ":" << chunk->get_bound() << dendl;
+                ldout(cct, 20) << __func__ << " buffers add a chunk: " << chunk->get_offset() << ":" << chunk->get_bound() << dendl;
             } else {
                 read += chunk->zero_copy_read(bl, response->byte_len);
                 //dispatcher->post_chunk_to_pool(chunk);
