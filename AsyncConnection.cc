@@ -313,7 +313,7 @@ ssize_t AsyncConnection::read_until(unsigned len, char *p)
   return len - state_offset;
 }
 ssize_t AsyncConnection::zero_copy_read(unsigned len){
-    ldout(async_msgr->cct, 25) << __func__ << " len is " << len << dendl;
+    ldout(async_msgr->cct, 20) << __func__ << " len is " << len << " state offset is " << state_offset << dendl;
 
     if (async_msgr->cct->_conf->ms_inject_socket_failures && cs) {
         if (rand() % async_msgr->cct->_conf->ms_inject_socket_failures == 0) {
@@ -342,10 +342,12 @@ ssize_t AsyncConnection::zero_copy_read(unsigned len){
     } else if(nread > 0){
         if((nread + state_offset) == len){
             state_offset = 0;
+            ldout(async_msgr->cct, 20) << __func__ << " len is " << len << " nread is " << nread << dendl;
             return 0;
         }
     }
     state_offset += nread;
+    ldout(async_msgr->cct, 20) << __func__ << " nread is " << nread << " state offset is " << state_offset << dendl;
     return len - state_offset;
 
 }
@@ -1016,7 +1018,7 @@ ssize_t AsyncConnection::_process_connection()
         } else if (r > 0) {
           break;
         }
-        copy_small_data(state_buffer,need_len);
+        copy_small_data(state_buffer, need_len);
         if (memcmp(state_buffer, CEPH_BANNER, banner_len)) {
           ldout(async_msgr->cct, 0) << __func__ << " connect protocol error (bad banner) on peer "
                                     << get_peer_addr() << dendl;
