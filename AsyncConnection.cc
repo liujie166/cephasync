@@ -327,7 +327,7 @@ ssize_t AsyncConnection::zero_copy_read(unsigned len){
     nread = cs.zero_copy_read(imcoming_bl, len - state_offset);
     if (nread < 0) {
         if (nread == -EAGAIN) {
-            goto again;
+            return len - state_offset;
         } else if (nread == -EINTR) {
             goto again;
         } else {
@@ -346,7 +346,7 @@ ssize_t AsyncConnection::zero_copy_read(unsigned len){
         }
     }
     state_offset += nread;
-    return nread;
+    return len - state_offset;
 
 }
 void AsyncConnection::inject_delay() {
@@ -1302,6 +1302,7 @@ ssize_t AsyncConnection::_process_connection()
         ldout(async_msgr->cct, 1) << __func__ << " sd=" << cs.fd() << " " << socket_addr << dendl;
 
         r = try_send(bl);
+
         if (r == 0) {
           state = STATE_ACCEPTING_WAIT_BANNER_ADDR;
           ldout(async_msgr->cct, 10) << __func__ << " write banner and addr done: "
