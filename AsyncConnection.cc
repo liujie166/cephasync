@@ -472,7 +472,7 @@ void AsyncConnection::process()
       case STATE_OPEN_TAG_ACK:
         {
           ceph_le64 *seq;
-          r= zero_copy_read(sizeof(*t));
+          r= zero_copy_read(sizeof(*seq));
           //r = read_until(sizeof(*seq), state_buffer);
           if (r < 0) {
             ldout(async_msgr->cct, 1) << __func__ << " read ack seq failed" << dendl;
@@ -481,7 +481,7 @@ void AsyncConnection::process()
             break;
           }
 
-          copy_small_data(state_buffer, sizeof(*t));
+          copy_small_data(state_buffer, sizeof(*seq));
 
           seq = (ceph_le64*)state_buffer;
           ldout(async_msgr->cct, 20) << __func__ << " got ACK" << dendl;
