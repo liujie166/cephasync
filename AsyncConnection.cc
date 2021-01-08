@@ -360,6 +360,7 @@ void AsyncConnection::inject_delay() {
     t.sleep();
   }
 }
+
 void AsyncConnection::copy_small_data(char* p,size_t len){
     uint32_t offset = 0;
     std::list<bufferptr>::const_iterator it = imcoming_bl.buffers().begin();
@@ -367,12 +368,15 @@ void AsyncConnection::copy_small_data(char* p,size_t len){
         const char * addr = it->c_str();
         if(len - offset > it->length())
             memcpy(p + offset, addr, it->length());
+            ldout(async_msgr->cct, 0) << __func__ << " imcoming bptr data size = " << it->length() << dendl;
+            offset+=it->length();
         else {
             memcpy(p + offset, addr, len - offset);
+            ldout(async_msgr->cct, 0) << __func__ << " imcoming bptr data size = " << len - offset << dendl;
+            offset+=it->length();
             break;
         }
-        ldout(async_msgr->cct, 0) << __func__ << " imcoming bptr data size = " << it->length() << dendl;
-        offset+=it->length();
+
     }
     bufferlist swapped;
     if (offset < imcoming_bl.length()) {
@@ -382,6 +386,7 @@ void AsyncConnection::copy_small_data(char* p,size_t len){
         imcoming_bl.clear();
     }
 }
+
 void AsyncConnection::process()
 {
   ssize_t r = 0;
