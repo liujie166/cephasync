@@ -366,10 +366,11 @@ void AsyncConnection::copy_small_data(char* p,size_t len){
     std::list<bufferptr>::const_iterator it = imcoming_bl.buffers().begin();
     while (it != imcoming_bl.buffers().end()) {
         const char * addr = it->c_str();
-        if(len - offset > it->length())
+        if(len - offset > it->length()) {
             memcpy(p + offset, addr, it->length());
             ldout(async_msgr->cct, 0) << __func__ << " imcoming bptr data size = " << it->length() << dendl;
-            offset+=it->length();
+            offset += it->length();
+        }
         else {
             memcpy(p + offset, addr, len - offset);
             ldout(async_msgr->cct, 0) << __func__ << " imcoming bptr data size = " << len - offset << dendl;
