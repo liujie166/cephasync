@@ -324,7 +324,7 @@ ssize_t AsyncConnection::zero_copy_read(unsigned len){
 
     ssize_t nread;
     again:
-    nread = cs.zero_copy_read(imcoming_bl, len);
+    nread = cs.zero_copy_read(imcoming_bl, len - state_offset);
     if (nread < 0) {
         if (nread == -EAGAIN) {
             goto again;
@@ -340,9 +340,12 @@ ssize_t AsyncConnection::zero_copy_read(unsigned len){
                                   << cs.fd() << dendl;
         return -1;
     } else if(nread > 0){
-        if(nread == len)
+        if((nread + state_offset) == len){
+            state_offset = 0;
             return 0;
+        }
     }
+    state_offset += nread;
     return nread;
 
 }
