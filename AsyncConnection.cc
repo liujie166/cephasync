@@ -358,9 +358,14 @@ void AsyncConnection::inject_delay() {
 void AsyncConnection::copy_small_data(char* p,size_t len){
     uint32_t offset = 0;
     std::list<bufferptr>::const_iterator it = imcoming_bl.buffers().begin();
-    while (it != imcoming_bl.buffers().end() && offset < len) {
+    while (it != imcoming_bl.buffers().end()) {
         const char * addr = it->c_str();
-        memcpy(p + offset, addr, it->length());
+        if(len - offset > it->length())
+            memcpy(p + offset, addr, it->length());
+        else {
+            memcpy(p + offset, addr, len - offset);
+            break;
+        }
         ldout(async_msgr->cct, 0) << __func__ << " imcoming bptr data size = " << it->length() << dendl;
         offset+=it->length();
     }
