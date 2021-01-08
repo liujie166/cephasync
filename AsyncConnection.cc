@@ -355,7 +355,23 @@ void AsyncConnection::inject_delay() {
     t.sleep();
   }
 }
-
+void AsyncConnection::copy_small_data(char* p,size_t len){
+    uint32_t offset = 0;
+    std::list<bufferptr>::const_iterator it = imcoming_bl.buffers().begin();
+    while (it != imcoming_bl.buffers().end() && offset < len) {
+        const char * addr = it->c_str();
+        memcpy(p + offset, addr, it->length());
+        ldout(async_msgr->cct, 0) << __func__ << " imcoming bptr data size = " << it->length() << dendl;
+        offset+=it->length();
+    }
+    bufferlist swapped;
+    if (offset < imcoming_bl.length()) {
+        imcoming_bl.splice(offset, imcoming_bl.length()-offset, &swapped);
+        imcoming_bl.swap(swapped);
+    } else {
+        imcoming_bl.clear();
+    }
+}
 void AsyncConnection::process()
 {
   ssize_t r = 0;
@@ -383,15 +399,7 @@ void AsyncConnection::process()
           } else if (r > 0) {
             break;
           }
-          uint32_t offset = 0;
-          std::list<bufferptr>::const_iterator it = imcoming_bl.buffers().begin();
-          while (it != imcoming_bl.buffers().end() && offset < sizeof(tag)) {
-              const char * addr = it->c_str();
-              memcpy(&tag + offset, addr, it->length());
-              ldout(async_msgr->cct, 0) << __func__ << " imcoming bptr data size = " << it->length() << dendl;
-              offset+=it->length();
-          }
-          imcoming_bl.clear();
+          copy_small_data(&tag, sizeof(tag));
 
           if (tag == CEPH_MSGR_TAG_KEEPALIVE) {
             ldout(async_msgr->cct, 20) << __func__ << " got KEEPALIVE" << dendl;
@@ -417,13 +425,16 @@ void AsyncConnection::process()
       case STATE_OPEN_KEEPALIVE2:
         {
           ceph_timespec *t;
-          r = read_until(sizeof(*t), state_buffer);
+          r= zero_copy_read(sizeof(*t));
+          //r = read_until(sizeof(*t), state_buffer);
           if (r < 0) {
             ldout(async_msgr->cct, 1) << __func__ << " read keeplive timespec failed" << dendl;
             goto fail;
           } else if (r > 0) {
             break;
           }
+
+          copy_small_data(state_buffer, sizeof(*t));
 
           ldout(async_msgr->cct, 30) << __func__ << " got KEEPALIVE2 tag ..." << dendl;
           t = (ceph_timespec*)state_buffer;
@@ -441,7 +452,8 @@ void AsyncConnection::process()
       case STATE_OPEN_KEEPALIVE2_ACK:
         {
           ceph_timespec *t;
-          r = read_until(sizeof(*t), state_buffer);
+          r= zero_copy_read(sizeof(*t));
+          //r = read_until(sizeof(*t), state_buffer);
           if (r < 0) {
             ldout(async_msgr->cct, 1) << __func__ << " read keeplive timespec failed" << dendl;
             goto fail;
@@ -449,6 +461,7 @@ void AsyncConnection::process()
             break;
           }
 
+          copy_small_data(state_buffer, sizeof(*t));
           t = (ceph_timespec*)state_buffer;
           set_last_keepalive_ack(utime_t(*t));
           ldout(async_msgr->cct, 20) << __func__ << " got KEEPALIVE_ACK" << dendl;
@@ -459,13 +472,16 @@ void AsyncConnection::process()
       case STATE_OPEN_TAG_ACK:
         {
           ceph_le64 *seq;
-          r = read_until(sizeof(*seq), state_buffer);
+          r= zero_copy_read(sizeof(*t));
+          //r = read_until(sizeof(*seq), state_buffer);
           if (r < 0) {
             ldout(async_msgr->cct, 1) << __func__ << " read ack seq failed" << dendl;
             goto fail;
           } else if (r > 0) {
             break;
           }
+
+          copy_small_data(state_buffer, sizeof(*t));
 
           seq = (ceph_le64*)state_buffer;
           ldout(async_msgr->cct, 20) << __func__ << " got ACK" << dendl;
@@ -484,14 +500,15 @@ void AsyncConnection::process()
           ceph_msg_header header;
           __u32 header_crc = 0;
 
-          r = read_until(sizeof(header), state_buffer);
+          r= zero_copy_read(sizeof(header));
+          //r = read_until(sizeof(header), state_buffer);
           if (r < 0) {
             ldout(async_msgr->cct, 1) << __func__ << " read message header failed" << dendl;
             goto fail;
           } else if (r > 0) {
             break;
           }
-
+          copy_small_data(state_buffer, sizeof(header));
           ldout(async_msgr->cct, 20) << __func__ << " got MSG header" << dendl;
 
           header = *((ceph_msg_header*)state_buffer);
@@ -597,14 +614,15 @@ void AsyncConnection::process()
           if (front_len) {
             if (!front.length())
               front.push_back(buffer::create(front_len));
-
-            r = read_until(front_len, front.c_str());
+            r= zero_copy_read(front_len);
+            //r = read_until(front_len, front.c_str());
             if (r < 0) {
               ldout(async_msgr->cct, 1) << __func__ << " read message front failed" << dendl;
               goto fail;
             } else if (r > 0) {
               break;
             }
+            copy_small_data(front.c_str(),front_len);
 
             ldout(async_msgr->cct, 20) << __func__ << " got front " << front.length() << dendl;
           }
@@ -618,14 +636,15 @@ void AsyncConnection::process()
           if (middle_len) {
             if (!middle.length())
               middle.push_back(buffer::create(middle_len));
-
-            r = read_until(middle_len, middle.c_str());
+            r= zero_copy_read(middle_len);
+            //r = read_until(middle_len, middle.c_str());
             if (r < 0) {
               ldout(async_msgr->cct, 1) << __func__ << " read message middle failed" << dendl;
               goto fail;
             } else if (r > 0) {
               break;
             }
+            copy_small_data(middle.c_str(),middle_len);
             ldout(async_msgr->cct, 20) << __func__ << " got middle " << middle.length() << dendl;
           }
 
@@ -665,14 +684,15 @@ void AsyncConnection::process()
           while (msg_left > 0) {
             bufferptr bp = data_blp.get_current_ptr();
             unsigned read = std::min(bp.length(), msg_left);
-            r = read_until(read, bp.c_str());
+            r= zero_copy_read(read);
+            //r = read_until(read, bp.c_str());
             if (r < 0) {
               ldout(async_msgr->cct, 1) << __func__ << " read data error " << dendl;
               goto fail;
             } else if (r > 0) {
               break;
             }
-
+            copy_small_data(bp.c_str(),read);
             data_blp.advance(read);
             data.append(bp, 0, read);
             msg_left -= read;
@@ -694,14 +714,15 @@ void AsyncConnection::process()
             len = sizeof(footer);
           else
             len = sizeof(old_footer);
-
-          r = read_until(len, state_buffer);
+          r = zero_copy_read(len);
+          //r = read_until(len, state_buffer);
           if (r < 0) {
             ldout(async_msgr->cct, 1) << __func__ << " read footer data error " << dendl;
             goto fail;
           } else if (r > 0) {
             break;
           }
+          copy_small_data(state_buffer,len);
 
           if (has_feature(CEPH_FEATURE_MSG_AUTH)) {
             footer = *((ceph_msg_footer*)state_buffer);
@@ -978,14 +999,16 @@ ssize_t AsyncConnection::_process_connection()
         bufferlist myaddrbl;
         unsigned banner_len = strlen(CEPH_BANNER);
         unsigned need_len = banner_len + sizeof(ceph_entity_addr)*2;
-        r = read_until(need_len, state_buffer);
+        r = zero_copy_read(need_len);
+
+        //r = read_until(need_len, state_buffer);
         if (r < 0) {
           ldout(async_msgr->cct, 1) << __func__ << " read banner and identify addresses failed" << dendl;
           goto fail;
         } else if (r > 0) {
           break;
         }
-
+        copy_small_data(state_buffer,need_len);
         if (memcmp(state_buffer, CEPH_BANNER, banner_len)) {
           ldout(async_msgr->cct, 0) << __func__ << " connect protocol error (bad banner) on peer "
                                     << get_peer_addr() << dendl;
@@ -1105,13 +1128,15 @@ ssize_t AsyncConnection::_process_connection()
 
     case STATE_CONNECTING_WAIT_CONNECT_REPLY:
       {
-        r = read_until(sizeof(connect_reply), state_buffer);
+          r = zero_copy_read(sizeof(connect_reply));
+        //r = read_until(sizeof(connect_reply), state_buffer);
         if (r < 0) {
           ldout(async_msgr->cct, 1) << __func__ << " read connect reply failed" << dendl;
           goto fail;
         } else if (r > 0) {
           break;
         }
+          copy_small_data(state_buffer,sizeof(connect_reply));
 
         connect_reply = *((ceph_msg_connect_reply*)state_buffer);
 
@@ -1131,14 +1156,15 @@ ssize_t AsyncConnection::_process_connection()
         if (connect_reply.authorizer_len) {
           ldout(async_msgr->cct, 10) << __func__ << " reply.authorizer_len=" << connect_reply.authorizer_len << dendl;
           assert(connect_reply.authorizer_len < 4096);
-          r = read_until(connect_reply.authorizer_len, state_buffer);
+          r = zero_copy_read(connect_reply.authorizer_len);
+          //r = read_until(connect_reply.authorizer_len, state_buffer);
           if (r < 0) {
             ldout(async_msgr->cct, 1) << __func__ << " read connect reply authorizer failed" << dendl;
             goto fail;
           } else if (r > 0) {
             break;
           }
-
+          copy_small_data(state_buffer,connect_reply.authorizer_len);
           authorizer_reply.append(state_buffer, connect_reply.authorizer_len);
 
 	  if (connect_reply.tag == CEPH_MSGR_TAG_CHALLENGE_AUTHORIZER) {
@@ -1166,15 +1192,15 @@ ssize_t AsyncConnection::_process_connection()
     case STATE_CONNECTING_WAIT_ACK_SEQ:
       {
         uint64_t newly_acked_seq = 0;
-
-        r = read_until(sizeof(newly_acked_seq), state_buffer);
+        r = zero_copy_read(sizeof(newly_acked_seq));
+        //r = read_until(sizeof(newly_acked_seq), state_buffer);
         if (r < 0) {
           ldout(async_msgr->cct, 1) << __func__ << " read connect ack seq failed" << dendl;
           goto fail;
         } else if (r > 0) {
           break;
         }
-
+        copy_small_data(state_buffer,sizeof(newly_acked_seq));
         newly_acked_seq = *((uint64_t*)state_buffer);
         ldout(async_msgr->cct, 2) << __func__ << " got newly_acked_seq " << newly_acked_seq
                             << " vs out_seq " << out_seq << dendl;
@@ -1287,15 +1313,15 @@ ssize_t AsyncConnection::_process_connection()
       {
         bufferlist addr_bl;
         entity_addr_t peer_addr;
-
-        r = read_until(strlen(CEPH_BANNER) + sizeof(ceph_entity_addr), state_buffer);
+        r =zero_copy_read(strlen(CEPH_BANNER) + sizeof(ceph_entity_addr));
+        //r = read_until(strlen(CEPH_BANNER) + sizeof(ceph_entity_addr), state_buffer);
         if (r < 0) {
           ldout(async_msgr->cct, 1) << __func__ << " read peer banner and addr failed" << dendl;
           goto fail;
         } else if (r > 0) {
           break;
         }
-
+        copy_small_data(state_buffer,strlen(CEPH_BANNER) + sizeof(ceph_entity_addr));
         if (memcmp(state_buffer, CEPH_BANNER, strlen(CEPH_BANNER))) {
           ldout(async_msgr->cct, 1) << __func__ << " accept peer sent bad banner '" << state_buffer
                                     << "' (should be '" << CEPH_BANNER << "')" << dendl;
@@ -1327,14 +1353,15 @@ ssize_t AsyncConnection::_process_connection()
 
     case STATE_ACCEPTING_WAIT_CONNECT_MSG:
       {
-        r = read_until(sizeof(connect_msg), state_buffer);
+          r = zero_copy_read(sizeof(connect_msg));
+        //r = read_until(sizeof(connect_msg), state_buffer);
         if (r < 0) {
           ldout(async_msgr->cct, 1) << __func__ << " read connect msg failed" << dendl;
           goto fail;
         } else if (r > 0) {
           break;
         }
-
+        copy_small_data(state_buffer,sizeof(connect_msg));
         connect_msg = *((ceph_msg_connect*)state_buffer);
         state = STATE_ACCEPTING_WAIT_CONNECT_MSG_AUTH;
         break;
@@ -1347,8 +1374,8 @@ ssize_t AsyncConnection::_process_connection()
         if (connect_msg.authorizer_len) {
           if (!authorizer_buf.length())
             authorizer_buf.push_back(buffer::create(connect_msg.authorizer_len));
-
-          r = read_until(connect_msg.authorizer_len, authorizer_buf.c_str());
+          r = zero_copy_read(connect_msg.authorizer_len);
+          //r = read_until(connect_msg.authorizer_len, authorizer_buf.c_str());
           if (r < 0) {
             ldout(async_msgr->cct, 1) << __func__ << " read connect authorizer failed" << dendl;
             goto fail;
@@ -1356,7 +1383,7 @@ ssize_t AsyncConnection::_process_connection()
             break;
           }
         }
-
+        copy_small_data(authorizer_buf.c_str(),connect_msg.authorizer_len);
         ldout(async_msgr->cct, 20) << __func__ << " accept got peer connect_seq "
                              << connect_msg.connect_seq << " global_seq "
                              << connect_msg.global_seq << dendl;
@@ -1379,7 +1406,8 @@ ssize_t AsyncConnection::_process_connection()
     case STATE_ACCEPTING_WAIT_SEQ:
       {
         uint64_t newly_acked_seq;
-        r = read_until(sizeof(newly_acked_seq), state_buffer);
+        r = zero_copy_read(sizeof(newly_acked_seq));
+        //r = read_until(sizeof(newly_acked_seq), state_buffer);
         if (r < 0) {
           ldout(async_msgr->cct, 1) << __func__ << " read ack seq failed" << dendl;
           goto fail_registered;
@@ -1387,6 +1415,7 @@ ssize_t AsyncConnection::_process_connection()
           break;
         }
 
+        copy_small_data(state_buffer,sizeof(newly_acked_seq));
         newly_acked_seq = *((uint64_t*)state_buffer);
         ldout(async_msgr->cct, 2) << __func__ << " accept get newly_acked_seq " << newly_acked_seq << dendl;
         discard_requeued_up_to(newly_acked_seq);

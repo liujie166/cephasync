@@ -58,6 +58,7 @@ class AsyncConnection : public Connection {
   ssize_t _try_send(bool more=false);
   ssize_t _send(Message *m);
   void prepare_send_message(uint64_t features, Message *m, bufferlist &bl);
+  void copy_small_data(char*, size_t);
   ssize_t read_until(unsigned needed, char *p);
   ssize_t zero_copy_read(unsigned len);
   ssize_t _process_connection();
