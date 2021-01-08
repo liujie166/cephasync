@@ -378,7 +378,7 @@ void AsyncConnection::copy_small_data(char* p,size_t len){
             offset += len - offset;
             break;
         }
-
+        it++;
     }
     bufferlist swapped;
     if (offset < imcoming_bl.length()) {
