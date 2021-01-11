@@ -158,6 +158,7 @@ void RDMADispatcher::handle_async_event()
 
 void RDMADispatcher::post_chunk_to_pool(Chunk* chunk) {
   Mutex::Locker l(lock);
+
   get_stack()->get_infiniband().post_chunk_to_pool(chunk);
   perf_logger->dec(l_msgr_rdma_rx_bufs_in_use);
   // handle a case when we have a limited number of
@@ -166,6 +167,12 @@ void RDMADispatcher::post_chunk_to_pool(Chunk* chunk) {
     ldout(cct, 20) << __func__ << " post_backlog is " << post_backlog << dendl;
     post_backlog -= get_stack()->get_infiniband().post_chunks_to_srq(post_backlog);
   }
+}
+
+void RDMADispatcher::post_one_chunk_to_srq() {
+    Mutex::Locker l(lock);
+    auto ret = get_stack()->get_infiniband().post_chunks_to_srq(post_backlog);
+    get_stack()->get_infiniband().post_chunks_to_srq(1);
 }
 
 void RDMADispatcher::polling()
