@@ -1036,6 +1036,7 @@ int Infiniband::post_chunks_to_srq(int num)
   ibv_recv_wr *badworkrequest;
   ret = ibv_post_srq_recv(srq, &rx_work_request[0], &badworkrequest);
   assert(ret == 0);
+  ldout(cct, 0) << __func__ << " post " << i << "rx_request to srq" << ", ret = " << ret << dendl;
   return i;
 }
 
