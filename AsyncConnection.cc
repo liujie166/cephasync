@@ -361,6 +361,10 @@ void AsyncConnection::inject_delay() {
   }
 }
 
+void AsyncConnection::append_large_data(bufferlist &bl, size_t len) {
+    imcoming_bl.splice(0, len, &bl);
+}
+
 void AsyncConnection::copy_small_data(char* p,size_t len){
     uint32_t offset = 0;
     std::list<bufferptr>::const_iterator it = imcoming_bl.buffers().begin();
@@ -629,8 +633,8 @@ void AsyncConnection::process()
           // read front
           unsigned front_len = current_header.front_len;
           if (front_len) {
-            if (!front.length())
-              front.push_back(buffer::create(front_len));
+            //if (!front.length())
+            //  front.push_back(buffer::create(front_len));
             r= zero_copy_read(front_len);
             //r = read_until(front_len, front.c_str());
             if (r < 0) {
@@ -639,8 +643,8 @@ void AsyncConnection::process()
             } else if (r > 0) {
               break;
             }
-            copy_small_data(front.c_str(),front_len);
-
+            //copy_small_data(front.c_str(),front_len);
+            append_large_data(front, front_len);
             ldout(async_msgr->cct, 20) << __func__ << " got front " << front.length() << dendl;
           }
           state = STATE_OPEN_MESSAGE_READ_MIDDLE;
@@ -651,8 +655,8 @@ void AsyncConnection::process()
           // read middle
           unsigned middle_len = current_header.middle_len;
           if (middle_len) {
-            if (!middle.length())
-              middle.push_back(buffer::create(middle_len));
+            //if (!middle.length())
+              //middle.push_back(buffer::create(middle_len));
             r= zero_copy_read(middle_len);
             //r = read_until(middle_len, middle.c_str());
             if (r < 0) {
@@ -661,7 +665,8 @@ void AsyncConnection::process()
             } else if (r > 0) {
               break;
             }
-            copy_small_data(middle.c_str(),middle_len);
+            append_large_data(middle_len,middle_len);
+            //copy_small_data(middle.c_str(),middle_len);
             ldout(async_msgr->cct, 20) << __func__ << " got middle " << middle.length() << dendl;
           }
 
@@ -673,7 +678,7 @@ void AsyncConnection::process()
           // read data
           unsigned data_len = le32_to_cpu(current_header.data_len);
           unsigned data_off = le32_to_cpu(current_header.data_off);
-          if (data_len) {
+          /*if (data_len) {
             // get a buffer
             map<ceph_tid_t,pair<bufferlist,int> >::iterator p = rx_buffers.find(current_header.tid);
             if (p != rx_buffers.end()) {
@@ -690,7 +695,7 @@ void AsyncConnection::process()
               alloc_aligned_buffer(data_buf, data_len, data_off);
               data_blp = data_buf.begin();
             }
-          }
+          }*/
 
           msg_left = data_len;
           state = STATE_OPEN_MESSAGE_READ_DATA;
@@ -699,7 +704,7 @@ void AsyncConnection::process()
       case STATE_OPEN_MESSAGE_READ_DATA:
         {
           while (msg_left > 0) {
-            bufferptr bp = data_blp.get_current_ptr();
+            //bufferptr bp = data_blp.get_current_ptr();
             unsigned read = std::min(bp.length(), msg_left);
             r= zero_copy_read(read);
             //r = read_until(read, bp.c_str());
@@ -709,9 +714,10 @@ void AsyncConnection::process()
             } else if (r > 0) {
               break;
             }
-            copy_small_data(bp.c_str(),read);
-            data_blp.advance(read);
-            data.append(bp, 0, read);
+            //copy_small_data(bp.c_str(),read);
+            append_large_data(data, read);
+            //data_blp.advance(read);
+            //data.append(bp, 0, read);
             msg_left -= read;
           }
 
