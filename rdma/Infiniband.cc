@@ -707,7 +707,6 @@ char *Infiniband::MemoryManager::PoolAllocator::malloc(const size_type bytes)
 {
   Chunk *ch;
   mem_info *m;
-  bufferptr chunks_bptr;
   size_t rx_buf_size;
   unsigned nbufs;
   MemoryManager *manager;
@@ -721,7 +720,7 @@ char *Infiniband::MemoryManager::PoolAllocator::malloc(const size_type bytes)
 
   if (!g_ctx->can_alloc(nbufs))
     return NULL;
-  chunks_bptr = bufferptr(buffer::create(bytes + sizeof(*m)));
+  bufferptr chunks_bptr(buffer::create(bytes + sizeof(*m)));
   m = reinterpret_cast<mem_info *>(chunks_bptr.c_str());
   m->mr = ibv_reg_mr(manager->pd->pd, m->chunks, bytes, IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_LOCAL_WRITE);
   if (m->mr == NULL) {
