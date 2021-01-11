@@ -342,6 +342,7 @@ class AsyncConnection : public Connection {
   utime_t recv_stamp;
   utime_t throttle_stamp;
   unsigned msg_left;
+  unsigned msg_offset;
   uint64_t cur_msg_size;
   ceph_msg_header current_header;
   bufferlist data_buf;

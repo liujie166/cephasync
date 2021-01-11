@@ -696,7 +696,7 @@ void AsyncConnection::process()
               data_blp = data_buf.begin();
             }
           }
-
+          //msg_offset = data_off & ~CEPH_PAGE_MASK;
           msg_left = data_len;
           state = STATE_OPEN_MESSAGE_READ_DATA;
         }
@@ -707,6 +707,7 @@ void AsyncConnection::process()
             bufferptr bp = data_blp.get_current_ptr();
             unsigned read = std::min(bp.length(), msg_left);
             r= zero_copy_read(read);
+            //r = zero_copy_read(msg_left);
             //r = read_until(read, bp.c_str());
             if (r < 0) {
               ldout(async_msgr->cct, 1) << __func__ << " read data error " << dendl;
@@ -715,11 +716,12 @@ void AsyncConnection::process()
               break;
             }
             copy_small_data(bp.c_str(),read);
+            //data.push_back(buffer::)
             //append_large_data(data, msg_left);
             data_blp.advance(read);
             data.append(bp, 0, read);
             msg_left -= read;
-            //msg_left = 0;
+            //msg_left -= r;
           }
 
           if (msg_left > 0)
