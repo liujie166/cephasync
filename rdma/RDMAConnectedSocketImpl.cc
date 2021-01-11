@@ -396,7 +396,7 @@ ssize_t RDMAConnectedSocketImpl::zero_copy_read(bufferlist& bl, size_t len)
             } else {
                 read += chunk->zero_copy_read(bl, response->byte_len);
                 ldout(cct, 0) << __func__ << " after read, bl size =  " << bl.buffers().size() << dendl;
-                dispatcher->post_chunk_to_pool(chunk);
+                //dispatcher->post_chunk_to_pool(chunk);
             }
         }
     }
