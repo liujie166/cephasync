@@ -678,7 +678,7 @@ void AsyncConnection::process()
           // read data
           unsigned data_len = le32_to_cpu(current_header.data_len);
           unsigned data_off = le32_to_cpu(current_header.data_off);
-          ldout(async_msgr->cct, 0) << __func__ << "[debug 0] data_len = " << data_len << "data_offset = " << data_offset << dendl;
+          ldout(async_msgr->cct, 0) << __func__ << "[debug 0] data_len = " << data_len << "data_offset = " << data_off << dendl;
           if (data_len) {
             // get a buffer
             map<ceph_tid_t,pair<bufferlist,int> >::iterator p = rx_buffers.find(current_header.tid);
