@@ -720,7 +720,7 @@ void AsyncConnection::process()
             append_large_data(data, msg_left);
             //data_blp.advance(read);
             //data.append(bp, 0, read);
-            msg_left -= read;
+            msg_left -= r;
             //msg_left -= r;
           }
 
