@@ -171,7 +171,6 @@ void RDMADispatcher::post_chunk_to_pool(Chunk* chunk) {
 
 void RDMADispatcher::post_one_chunk_to_srq() {
     Mutex::Locker l(lock);
-    auto ret = get_stack()->get_infiniband().post_chunks_to_srq(post_backlog);
     get_stack()->get_infiniband().post_chunks_to_srq(1);
 }
 
