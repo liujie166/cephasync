@@ -181,6 +181,7 @@ class RDMAConnectedSocketImpl : public ConnectedSocketImpl {
   RDMADispatcher* dispatcher;
   RDMAWorker* worker;
   std::vector<Chunk*> buffers;
+  std::vector<Chunk*> wait_free_buffers;
   int notify_fd = -1;
   bufferlist pending_bl;
 

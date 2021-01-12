@@ -385,7 +385,7 @@ ssize_t RDMAConnectedSocketImpl::zero_copy_read(bufferlist& bl, size_t len)
                 error = ECONNRESET;
                 ldout(cct, 20) << __func__ << " got remote close msg..." << dendl;
             }
-            dispatcher->post_chunk_to_pool(chunk);
+            wait_free_buffers.push_back(chunk);
         } else {
             if (read == (ssize_t)len) {
                 buffers.push_back(chunk);
@@ -397,7 +397,7 @@ ssize_t RDMAConnectedSocketImpl::zero_copy_read(bufferlist& bl, size_t len)
             } else {
                 read += chunk->zero_copy_read(bl, response->byte_len);
                 ldout(cct, 0) << __func__ << " after read, bl size =  " << bl.buffers().size() << dendl;
-                dispatcher->post_chunk_to_pool(chunk);
+                wait_free_buffers.push_back(chunk);
             }
         }
     }
@@ -412,6 +412,14 @@ ssize_t RDMAConnectedSocketImpl::zero_copy_read(bufferlist& bl, size_t len)
 
     if (!buffers.empty()) {
         notify();
+    }
+    //avoid remalloc the same memory after malloc, which lead to segment fault....so we free all chunk together
+    if(!wait_free_buffers.empty()) {
+        auto c = buffers.begin();
+        for (; c != buffers.end() ; ++c) {
+            dispatcher->post_chunk_to_pool(*c);
+        }
+        buffers.clear();
     }
 
     if (read == 0 && error)
@@ -450,7 +458,7 @@ ssize_t RDMAConnectedSocketImpl::read_buffers2(bufferlist &bl, size_t len)
         read += tmp;
         ldout(cct, 0) << __func__ << " this iter read: " << tmp << " bytes." << " offset: " << (*c)->get_offset() << " ,bound: " << (*c)->get_bound()  << ". Chunk:" << *c  << dendl;
         if ((*c)->over()) {
-            dispatcher->post_chunk_to_pool(*c);
+            wait_free_buffers.push_back(*c);
             ldout(cct, 0) << __func__ << " one chunk over." << dendl;
         }
         if (read == len) {
