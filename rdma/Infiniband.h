@@ -246,7 +246,7 @@ class Infiniband {
       Chunk* chunk_base = nullptr;
     };
 
-    class MemPoolContext {
+    /*class MemPoolContext {
       PerfCounters *perf_logger;
 
      public:
@@ -281,7 +281,7 @@ class Infiniband {
       static MemPoolContext  *g_ctx;
       static Mutex lock;
     };
-
+*/
     /**
      * modify boost pool so that it is possible to
      * have a thread safe 'context' when allocating/freeing
@@ -353,8 +353,8 @@ class Infiniband {
     Cluster* send = nullptr;// SEND
     Device *device;
     ProtectionDomain *pd;
-    MemPoolContext rxbuf_pool_ctx;
-    mem_pool     rxbuf_pool;
+    //MemPoolContext rxbuf_pool_ctx;
+    //mem_pool     rxbuf_pool;
 
     void* huge_pages_malloc(size_t size);
     void  huge_pages_free(void *ptr);

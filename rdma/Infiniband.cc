@@ -650,7 +650,7 @@ int Infiniband::MemoryManager::Cluster::get_buffers(std::vector<Chunk*> &chunks,
   }
   return r;
 }
-
+/*
 bool Infiniband::MemoryManager::MemPoolContext::can_alloc(unsigned nbufs)
 {
   /* unlimited */
@@ -763,7 +763,7 @@ void Infiniband::MemoryManager::PoolAllocator::free(char * const block)
   ibv_dereg_mr(m->mr);
   m->ctx->manager->free(m);
 }
-
+*/
 Infiniband::MemoryManager::MemoryManager(CephContext *c, Device *d, ProtectionDomain *p)
   : cct(c), device(d), pd(p)
   /*****
