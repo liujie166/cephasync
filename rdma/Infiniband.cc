@@ -765,8 +765,8 @@ void Infiniband::MemoryManager::PoolAllocator::free(char * const block)
 }
 
 Infiniband::MemoryManager::MemoryManager(CephContext *c, Device *d, ProtectionDomain *p)
-  : cct(c), device(d), pd(p),
-    rxbuf_pool_ctx(this),
+  : cct(c), device(d), pd(p)
+    /*rxbuf_pool_ctx(this),
     rxbuf_pool(&rxbuf_pool_ctx, sizeof(Chunk) + c->_conf->ms_async_rdma_buffer_size,
                c->_conf->ms_async_rdma_receive_buffers > 0 ?
                   // if possible make initial pool size 2 * receive_queue_len
@@ -775,7 +775,7 @@ Infiniband::MemoryManager::MemoryManager(CephContext *c, Device *d, ProtectionDo
                   (c->_conf->ms_async_rdma_receive_buffers < 2 * c->_conf->ms_async_rdma_receive_queue_len ?
                    c->_conf->ms_async_rdma_receive_buffers :  2 * c->_conf->ms_async_rdma_receive_queue_len) :
                   // rx pool is infinite, we can set any initial size that we want
-                   2 * c->_conf->ms_async_rdma_receive_queue_len)
+                   2 * c->_conf->ms_async_rdma_receive_queue_len)*/
 {
 }
 
@@ -1038,13 +1038,12 @@ int Infiniband::post_chunks_to_srq(int num)
 {
   int ret, i = 0;
   ibv_sge isge[num];
-
+  Chunk* chunk;
   ibv_recv_wr rx_work_request[num];
 
   while (i < num) {
-    Chunk** chunk_ptr = static_cast<Chunk**>(std::malloc(sizeof(Chunk*)));
-    Chunk* chunk = *chunk_ptr;
     chunk = get_memory_manager()->get_rx_buffer();
+    chunk->self = chunk;
     if (chunk == NULL) {
       lderr(cct) << __func__ << " WARNING: out of memory. Requested " << num <<
         " rx buffers. Got " << i << dendl;
@@ -1060,7 +1059,7 @@ int Infiniband::post_chunks_to_srq(int num)
     isge[i].lkey = chunk->lkey;
 
     memset(&rx_work_request[i], 0, sizeof(rx_work_request[i]));
-    rx_work_request[i].wr_id = reinterpret_cast<uint64_t>(chunk);// stash descriptor ptr
+    rx_work_request[i].wr_id = reinterpret_cast<uint64_t>(chunk->self);// stash descriptor ptr
     if (i == num - 1) {
       rx_work_request[i].next = 0;
     } else {

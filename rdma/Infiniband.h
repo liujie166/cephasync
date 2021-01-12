@@ -208,6 +208,7 @@ class Infiniband {
 
      public:
       ibv_mr* mr = nullptr;
+      Chunk* self = nullptr;
       uint32_t lkey = 0;
       uint32_t bytes;
       uint32_t bound = 0;
