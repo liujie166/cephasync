@@ -332,7 +332,7 @@ class Infiniband {
     //dynamic allocate memory because we do not reuse it but message use it.
     Chunk *get_rx_buffer() {
        //return reinterpret_cast<Chunk *>(rxbuf_pool.malloc());
-       return dynamic_malloc_chunk();
+       return reinterpret_cast<Chunk *>(dynamic_malloc_chunk());
     }
 
     void release_rx_buffer(Chunk *chunk) {

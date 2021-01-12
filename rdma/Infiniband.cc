@@ -744,7 +744,7 @@ char *Infiniband::MemoryManager::PoolAllocator::malloc(const size_type bytes)
     ch->lkey = m->mr->lkey;
     ch->bytes  = cct->_conf->ms_async_rdma_buffer_size;
     ch->offset = 0;
-    ch->bptr = bufferptr(chunks_bptr, (unsigned)chunks_offset, (unsigned)cct->_conf->ms_async_rdma_buffer_size);
+    ch->bptr = new bufferptr(chunks_bptr, (unsigned)chunks_offset, (unsigned)cct->_conf->ms_async_rdma_buffer_size);
     chunks_offset += rx_buf_size;
     ch->buffer = ch->data;
     ch = reinterpret_cast<Chunk *>(reinterpret_cast<char *>(ch) + rx_buf_size);
@@ -846,7 +846,7 @@ int Infiniband::MemoryManager::get_send_buffers(std::vector<Chunk*> &c, size_t b
   return send->get_buffers(c, bytes);
 }
 
-Chunk* Infiniband::MemoryManager::dynamic_malloc_chunk()
+char* Infiniband::MemoryManager::dynamic_malloc_chunk()
 {
     Chunk* c;
     c = static_cast<Chunk *>(malloc(sizeof(Chunk)));
@@ -872,7 +872,7 @@ Chunk* Infiniband::MemoryManager::dynamic_malloc_chunk()
     c->offset = 0;
     c->buffer = c->bptr->c_str();
     ldout(cct, 0) << __func__ << " succeed to malloc a chunk and return it..." << dendl;
-    return c;
+    return reinterpret_cast<char *>(c);
 }
 
 void Infiniband::MemoryManager::dynamic_free_chunk(Chunk *c)
