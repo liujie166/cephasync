@@ -1042,7 +1042,7 @@ int Infiniband::post_chunks_to_srq(int num)
   ibv_recv_wr rx_work_request[num];
 
   while (i < num) {
-    Chunk** chunk_ptr = std::malloc(sizeof(Chunk*));
+    Chunk** chunk_ptr = static_cast<Chunk**>(std::malloc(sizeof(Chunk*)));
     Chunk* chunk = *chunk_ptr;
     chunk = get_memory_manager()->get_rx_buffer();
     if (chunk == NULL) {
