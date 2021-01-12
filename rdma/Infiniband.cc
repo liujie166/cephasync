@@ -653,7 +653,7 @@ int Infiniband::MemoryManager::Cluster::get_buffers(std::vector<Chunk*> &chunks,
 /*
 bool Infiniband::MemoryManager::MemPoolContext::can_alloc(unsigned nbufs)
 {
-  /* unlimited */
+
   if (manager->cct->_conf->ms_async_rdma_receive_buffers <= 0)
     return true;
 
@@ -737,7 +737,7 @@ char *Infiniband::MemoryManager::PoolAllocator::malloc(const size_type bytes)
   // note that the memory can be allocated before perf logger is set
   g_ctx->update_stats(nbufs);
 
-  /* initialize chunks */
+
   ch = m->chunks;
   unsigned  chunks_offset = sizeof(mem_info) + sizeof(Chunk);
   for (unsigned i = 0; i < nbufs; i++) {

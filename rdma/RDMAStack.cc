@@ -84,7 +84,7 @@ void RDMADispatcher::polling_start()
   if (t.joinable()) 
     return; // dispatcher thread already running 
 
-  get_stack()->get_infiniband().get_memory_manager()->set_rx_stat_logger(perf_logger);
+  //get_stack()->get_infiniband().get_memory_manager()->set_rx_stat_logger(perf_logger);
 
   tx_cc = get_stack()->get_infiniband().create_comp_channel(cct);
   assert(tx_cc);
