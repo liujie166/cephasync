@@ -291,7 +291,7 @@ class Infiniband {
      * RX and TX pool.
      * TODO: use boost pool to allocate TX chunks too
      */
-    class mem_pool : public boost::pool<PoolAllocator> {
+    /*class mem_pool : public boost::pool<PoolAllocator> {
      private:
       MemPoolContext *ctx;
       void *slow_malloc();
@@ -310,7 +310,7 @@ class Infiniband {
         // slow path code
         return slow_malloc();
       }
-    };
+    };*/
 
     MemoryManager(CephContext *c, Device *d, ProtectionDomain *p);
     ~MemoryManager();
@@ -341,9 +341,9 @@ class Infiniband {
         dynamic_free_chunk(chunk);
     }
 
-    void set_rx_stat_logger(PerfCounters *logger) {
+    /*void set_rx_stat_logger(PerfCounters *logger) {
       rxbuf_pool_ctx.set_stat_logger(logger);
-    }
+    }*/
 
     CephContext  *cct;
    private:
