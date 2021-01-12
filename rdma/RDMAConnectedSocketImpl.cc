@@ -68,7 +68,9 @@ void RDMAConnectedSocketImpl::pass_wc(std::vector<ibv_wc> &&v)
     wc = std::move(v);
   else
     wc.insert(wc.end(), v.begin(), v.end());
+
   notify();
+    cout << "wc size =" << wc.size()<< "\n";
 }
 
 void RDMAConnectedSocketImpl::get_wc(std::vector<ibv_wc> &w)

@@ -246,72 +246,6 @@ class Infiniband {
       Chunk* chunk_base = nullptr;
     };
 
-    /*class MemPoolContext {
-      PerfCounters *perf_logger;
-
-     public:
-      MemoryManager *manager;
-      unsigned n_bufs_allocated;
-      // true if it is possible to alloc
-      // more memory for the pool
-      MemPoolContext(MemoryManager *m) :
-        perf_logger(nullptr),
-        manager(m),
-        n_bufs_allocated(0) {}
-      bool can_alloc(unsigned nbufs);
-      void update_stats(int val);
-      void set_stat_logger(PerfCounters *logger);
-    };
-
-    class PoolAllocator {
-      struct mem_info {
-        ibv_mr   *mr;
-        MemPoolContext *ctx;
-        unsigned nbufs;
-        Chunk chunks[0];
-      };
-     public:
-      typedef std::size_t size_type;
-      typedef std::ptrdiff_t difference_type;
-
-      static char * malloc(const size_type bytes);
-      static void free(char * const block);
-
-      //static mem_info* m;
-      static MemPoolContext  *g_ctx;
-      static Mutex lock;
-    };
-*/
-    /**
-     * modify boost pool so that it is possible to
-     * have a thread safe 'context' when allocating/freeing
-     * the memory. It is needed to allow a different pool
-     * configurations and bookkeeping per CephContext and
-     * also to be able to use same allocator to deal with
-     * RX and TX pool.
-     * TODO: use boost pool to allocate TX chunks too
-     */
-    /*class mem_pool : public boost::pool<PoolAllocator> {
-     private:
-      MemPoolContext *ctx;
-      void *slow_malloc();
-
-     public:
-      explicit mem_pool(MemPoolContext *ctx, const size_type nrequested_size,
-          const size_type nnext_size = 32,
-          const size_type nmax_size = 0) :
-        pool(nrequested_size, nnext_size, nmax_size),
-        ctx(ctx) { }
-
-      void *malloc() {
-        if (!store().empty())
-          return (store().malloc)();
-        // need to alloc more memory...
-        // slow path code
-        return slow_malloc();
-      }
-    };*/
-
     MemoryManager(CephContext *c, Device *d, ProtectionDomain *p);
     ~MemoryManager();
 
@@ -341,9 +275,7 @@ class Infiniband {
         dynamic_free_chunk(chunk);
     }
 
-    /*void set_rx_stat_logger(PerfCounters *logger) {
-      rxbuf_pool_ctx.set_stat_logger(logger);
-    }*/
+
 
     CephContext  *cct;
    private:
@@ -353,8 +285,7 @@ class Infiniband {
     Cluster* send = nullptr;// SEND
     Device *device;
     ProtectionDomain *pd;
-    //MemPoolContext rxbuf_pool_ctx;
-    //mem_pool     rxbuf_pool;
+
 
     void* huge_pages_malloc(size_t size);
     void  huge_pages_free(void *ptr);

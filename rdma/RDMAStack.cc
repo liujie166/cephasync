@@ -164,7 +164,7 @@ void RDMADispatcher::post_chunk_to_pool(Chunk* chunk) {
   // handle a case when we have a limited number of
   // rx buffers and we could not post a required amount when polling
   if (post_backlog > 0) {
-    ldout(cct, 20) << __func__ << " post_backlog is " << post_backlog << dendl;
+    ldout(cct, 0) << __func__ << " post_backlog is " << post_backlog << dendl;
     post_backlog -= get_stack()->get_infiniband().post_chunks_to_srq(post_backlog);
   }
 }
