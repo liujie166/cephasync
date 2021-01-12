@@ -532,14 +532,12 @@ uint32_t Infiniband::MemoryManager::Chunk::zero_copy_read(bufferlist &bl, uint32
     cout << "zero_copy_read, bptr addr = " <<bptr << "\n";
     if (left >= len) {
         //memcpy(buf, buffer+offset, len);
-        bufferptr *new_bptr = new bufferptr(*bptr, offset, len);
-        bl.push_back(std::move(*new_bptr));
+        bl.push_back(bufferptr(*bptr, offset, len));
         offset += len;
         return len;
     } else {
         //memcpy(buf, buffer+offset, left);
-        bufferptr *new_bptr = new bufferptr(*bptr, offset, left);
-        bl.push_back(std::move(*new_bptr));
+        bl.push_back(bufferptr(*bptr, offset, left));
         offset = 0;
         bound = 0;
         return left;
