@@ -529,20 +529,23 @@ uint32_t Infiniband::MemoryManager::Chunk::read(char* buf, uint32_t len)
 uint32_t Infiniband::MemoryManager::Chunk::zero_copy_read(bufferlist &bl, uint32_t len)
 {
     uint32_t left = bound - offset;
-    cout << "zero_copy_read, bptr addr = " <<bptr << "\n";
+    cout << "before zero_copy_read, bptr addr = " <<bptr << "\n";
 
     if (left >= len) {
         //memcpy(buf, buffer+offset, len);
         bl.push_back(std::move(bufferptr(*bptr, offset, len)));
         offset += len;
+        cout << "after zero_copy_read, bptr addr = " << bptr << "\n";
         return len;
     } else {
         //memcpy(buf, buffer+offset, left);
         bl.push_back(std::move(bufferptr(*bptr, offset, left)));
         offset = 0;
         bound = 0;
+        cout << "after zero_copy_read, bptr addr = " << bptr << "\n";
         return left;
     }
+
 }
 uint32_t Infiniband::MemoryManager::Chunk::write(char* buf, uint32_t len)
 {
