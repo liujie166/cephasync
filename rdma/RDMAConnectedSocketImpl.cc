@@ -385,7 +385,7 @@ ssize_t RDMAConnectedSocketImpl::zero_copy_read(bufferlist& bl, size_t len)
                 error = ECONNRESET;
                 ldout(cct, 20) << __func__ << " got remote close msg..." << dendl;
             }
-            wait_free_buffers.push_back(chunk);
+            dispatcher->post_chunk_to_pool(chunk);
         } else {
             if (read == (ssize_t)len) {
                 buffers.push_back(chunk);
@@ -397,7 +397,7 @@ ssize_t RDMAConnectedSocketImpl::zero_copy_read(bufferlist& bl, size_t len)
             } else {
                 read += chunk->zero_copy_read(bl, response->byte_len);
                 ldout(cct, 0) << __func__ << " after read, bl size =  " << bl.buffers().size() << dendl;
-                wait_free_buffers.push_back(chunk);
+                dispatcher->post_chunk_to_pool(chunk);
             }
         }
     }
@@ -412,14 +412,6 @@ ssize_t RDMAConnectedSocketImpl::zero_copy_read(bufferlist& bl, size_t len)
 
     if (!buffers.empty()) {
         notify();
-    }
-    //avoid remalloc the same memory after malloc, which lead to segment fault....so we free all chunk together
-    if(!wait_free_buffers.empty()) {
-        auto c = buffers.begin();
-        for (; c != buffers.end() ; ++c) {
-            dispatcher->post_chunk_to_pool(*c);
-        }
-        buffers.clear();
     }
 
     if (read == 0 && error)
@@ -458,7 +450,6 @@ ssize_t RDMAConnectedSocketImpl::read_buffers2(bufferlist &bl, size_t len)
         read += tmp;
         ldout(cct, 0) << __func__ << " this iter read: " << tmp << " bytes." << " offset: " << (*c)->get_offset() << " ,bound: " << (*c)->get_bound()  << ". Chunk:" << *c  << dendl;
         if ((*c)->over()) {
-            wait_free_buffers.push_back(*c);
             ldout(cct, 0) << __func__ << " one chunk over." << dendl;
         }
         if (read == len) {
@@ -468,6 +459,10 @@ ssize_t RDMAConnectedSocketImpl::read_buffers2(bufferlist &bl, size_t len)
 
     if (c != buffers.end() && (*c)->over())
         ++c;
+    auto c_free = buffers.begin();
+    for (; c_free != c ; ++c_free) {
+        dispatcher->post_chunk_to_pool(*c_free);
+    }
     buffers.erase(buffers.begin(), c);
     ldout(cct, 25) << __func__ << " got " << read  << " bytes, buffers size: " << buffers.size() << dendl;
     return read;
