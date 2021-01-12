@@ -529,6 +529,7 @@ uint32_t Infiniband::MemoryManager::Chunk::read(char* buf, uint32_t len)
 uint32_t Infiniband::MemoryManager::Chunk::zero_copy_read(bufferlist &bl, uint32_t len)
 {
     uint32_t left = bound - offset;
+    cout << "zero_copy_read, bptr addr = " <<bptr << "\n";
     if (left >= len) {
         //memcpy(buf, buffer+offset, len);
         bufferptr *new_bptr = new bufferptr(*bptr, offset, len);
@@ -733,6 +734,7 @@ char* Infiniband::MemoryManager::dynamic_malloc_chunk()
     }
     c->bytes = cct->_conf->ms_async_rdma_buffer_size;
     c->bptr = new bufferptr(c->bytes);
+    cout << "dynamic malloc, bptr addr is " << c->bptr << "\n";
     if(!c->bptr){
         ldout(cct, 0) << __func__ << " create bufferptr failed..." << dendl;
         free(c);
