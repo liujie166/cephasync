@@ -732,7 +732,7 @@ char* Infiniband::MemoryManager::dynamic_malloc_chunk()
         return nullptr;
     }
     c->bytes = cct->_conf->ms_async_rdma_buffer_size;
-    c->bptr = new bufferptr(buffer::create(c->bytes));
+    c->bptr = new bufferptr(c->bytes);
     if(!c->bptr){
         ldout(cct, 0) << __func__ << " create bufferptr failed..." << dendl;
         free(c);
