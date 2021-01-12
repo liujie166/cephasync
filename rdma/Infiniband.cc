@@ -1038,10 +1038,11 @@ int Infiniband::post_chunks_to_srq(int num)
 {
   int ret, i = 0;
   ibv_sge isge[num];
-  Chunk *chunk;
+
   ibv_recv_wr rx_work_request[num];
 
   while (i < num) {
+    Chunk** chunk = std::malloc(sizeof(Chunk*));
     chunk = get_memory_manager()->get_rx_buffer();
     if (chunk == NULL) {
       lderr(cct) << __func__ << " WARNING: out of memory. Requested " << num <<
@@ -1058,7 +1059,7 @@ int Infiniband::post_chunks_to_srq(int num)
     isge[i].lkey = chunk->lkey;
 
     memset(&rx_work_request[i], 0, sizeof(rx_work_request[i]));
-    rx_work_request[i].wr_id = reinterpret_cast<uint64_t>(chunk);// stash descriptor ptr
+    rx_work_request[i].wr_id = reinterpret_cast<uint64_t>(*chunk);// stash descriptor ptr
     if (i == num - 1) {
       rx_work_request[i].next = 0;
     } else {

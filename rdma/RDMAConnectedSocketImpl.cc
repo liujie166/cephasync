@@ -385,6 +385,7 @@ ssize_t RDMAConnectedSocketImpl::zero_copy_read(bufferlist& bl, size_t len)
                 ldout(cct, 20) << __func__ << " got remote close msg..." << dendl;
             }
             dispatcher->post_chunk_to_pool(chunk);
+            std::free(chunk);
         } else {
             if (read == (ssize_t)len) {
                 buffers.push_back(chunk);
@@ -396,6 +397,7 @@ ssize_t RDMAConnectedSocketImpl::zero_copy_read(bufferlist& bl, size_t len)
             } else {
                 read += chunk->zero_copy_read(bl, response->byte_len);
                 ldout(cct, 0) << __func__ << " after read, bl size =  " << bl.buffers().size() << dendl;
+                std::free(chunk);
                 //dispatcher->post_chunks_to_srq();
             }
         }
