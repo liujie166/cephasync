@@ -765,7 +765,7 @@ void Infiniband::MemoryManager::PoolAllocator::free(char * const block)
 }
 
 Infiniband::MemoryManager::MemoryManager(CephContext *c, Device *d, ProtectionDomain *p)
-  : cct(c), device(d), pd(p)
+  : cct(c), device(d), pd(p),
     rxbuf_pool_ctx(this),
     rxbuf_pool(&rxbuf_pool_ctx, sizeof(Chunk) + c->_conf->ms_async_rdma_buffer_size,
                c->_conf->ms_async_rdma_receive_buffers > 0 ?
