@@ -529,7 +529,7 @@ uint32_t Infiniband::MemoryManager::Chunk::read(char* buf, uint32_t len)
 uint32_t Infiniband::MemoryManager::Chunk::zero_copy_read(bufferlist &bl, uint32_t len)
 {
     uint32_t left = bound - offset;
-    cout << "before zero_copy_read, bptr addr = " <<bptr << "\n";
+    cout << "this chunk addr = " << this << " before zero_copy_read, bptr addr = " <<bptr << " offset = " << offset << " bound = " << bound << "\n";
 
     if (left >= len) {
         //memcpy(buf, buffer+offset, len);
