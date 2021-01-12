@@ -448,10 +448,10 @@ ssize_t RDMAConnectedSocketImpl::read_buffers2(bufferlist &bl, size_t len)
     for (; c != buffers.end() ; ++c) {
         tmp = (*c)->zero_copy_read(bl, len-read);
         read += tmp;
-        ldout(cct, 25) << __func__ << " this iter read: " << tmp << " bytes." << " offset: " << (*c)->get_offset() << " ,bound: " << (*c)->get_bound()  << ". Chunk:" << *c  << dendl;
+        ldout(cct, 0) << __func__ << " this iter read: " << tmp << " bytes." << " offset: " << (*c)->get_offset() << " ,bound: " << (*c)->get_bound()  << ". Chunk:" << *c  << dendl;
         if ((*c)->over()) {
             dispatcher->post_chunk_to_pool(*c);
-            ldout(cct, 25) << __func__ << " one chunk over." << dendl;
+            ldout(cct, 0) << __func__ << " one chunk over." << dendl;
         }
         if (read == len) {
             break;
