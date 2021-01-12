@@ -864,7 +864,7 @@ char* Infiniband::MemoryManager::dynamic_malloc_chunk()
     c->mr = ibv_reg_mr(pd->pd, c->bptr->c_str(), c->bytes, IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_LOCAL_WRITE);
     if(!c->mr){
         ldout(cct, 0) << __func__ << " register memory failed..." << dendl;
-        delete c->bptr
+        delete c->bptr;
         free(c);
         return nullptr
     }
