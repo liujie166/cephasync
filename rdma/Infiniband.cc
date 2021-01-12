@@ -531,13 +531,13 @@ uint32_t Infiniband::MemoryManager::Chunk::zero_copy_read(bufferlist &bl, uint32
     uint32_t left = bound - offset;
     if (left >= len) {
         //memcpy(buf, buffer+offset, len);
-        bufferptr *new_bptr = new bufferptr(bptr, offset, len);
+        bufferptr *new_bptr = new bufferptr(*bptr, offset, len);
         bl.push_back(std::move(*new_bptr));
         offset += len;
         return len;
     } else {
         //memcpy(buf, buffer+offset, left);
-        bufferptr *new_bptr = new bufferptr(bptr, offset, left);
+        bufferptr *new_bptr = new bufferptr(*bptr, offset, left);
         bl.push_back(std::move(*new_bptr));
         offset = 0;
         bound = 0;
@@ -846,6 +846,42 @@ int Infiniband::MemoryManager::get_send_buffers(std::vector<Chunk*> &c, size_t b
   return send->get_buffers(c, bytes);
 }
 
+Chunk* Infiniband::MemoryManager::dynamic_malloc_chunk()
+{
+    Chunk* c;
+    c = static_cast<Chunk *>(malloc(sizeof(Chunk)));
+    if(!c){
+        ldout(cct, 0) << __func__ << " malloc Chunk failed..." << dendl;
+        return nullptr;
+    }
+    c->bytes = cct->_conf->ms_async_rdma_buffer_size;
+    c->bptr = new bufferptr(buffer::create(c->bytes));
+    if(!c->bptr){
+        ldout(cct, 0) << __func__ << " create bufferptr failed..." << dendl;
+        free(c);
+        return nullptr;
+    }
+    c->mr = ibv_reg_mr(pd->pd, c->bptr->c_str(), c->bytes, IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_LOCAL_WRITE);
+    if(!c->mr){
+        ldout(cct, 0) << __func__ << " register memory failed..." << dendl;
+        delete c->bptr
+        free(c);
+        return nullptr
+    }
+    c->lkey   = c->mr->lkey;
+    c->offset = 0;
+    c->buffer = c->bptr->c_str();
+    ldout(cct, 0) << __func__ << " succeed to malloc a chunk and return it..." << dendl;
+    return c;
+}
+
+void Infiniband::MemoryManager::dynamic_free_chunk(Chunk *c)
+{
+   ibv_dereg_mr(c->mr);
+   delete c->bptr;
+   free(c);
+}
+
 static std::atomic<bool> init_prereq = {false};
 
 void Infiniband::verify_prereq(CephContext *cct) {
@@ -1017,7 +1053,7 @@ int Infiniband::post_chunks_to_srq(int num)
       break;
     }
 
-    isge[i].addr = reinterpret_cast<uint64_t>(chunk->bptr.c_str());
+    isge[i].addr = reinterpret_cast<uint64_t>(chunk->buffer);
     isge[i].length = chunk->bytes;
     isge[i].lkey = chunk->lkey;
 

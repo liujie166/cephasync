@@ -207,15 +207,16 @@ class Infiniband {
       void clear();
 
      public:
-      ibv_mr* mr;
+      ibv_mr* mr = nullptr;
       uint32_t lkey = 0;
       uint32_t bytes;
       uint32_t bound = 0;
       uint32_t offset;
-      bufferptr bptr;
+      bufferptr* bptr = nullptr;
       char* buffer;// TODO: remove buffer/refactor TX
       char data[0];
     };
+
 
     class Cluster {
      public:
@@ -320,19 +321,23 @@ class Infiniband {
     void return_tx(std::vector<Chunk*> &chunks);
     int get_send_buffers(std::vector<Chunk*> &c, size_t bytes);
     bool is_tx_buffer(const char* c) { return send->is_my_buffer(c); }
+    Chunk *dynamic_malloc_chunk();
+    void dynamic_free_chunk(Chunk *);
     Chunk *get_tx_chunk_by_buffer(const char *c) {
       return send->get_chunk_by_buffer(c);
     }
     uint32_t get_tx_buffer_size() const {
       return send->buffer_size;
     }
-
+    //dynamic allocate memory because we do not reuse it but message use it.
     Chunk *get_rx_buffer() {
-       return reinterpret_cast<Chunk *>(rxbuf_pool.malloc());
+       //return reinterpret_cast<Chunk *>(rxbuf_pool.malloc());
+       return dynamic_malloc_chunk();
     }
 
     void release_rx_buffer(Chunk *chunk) {
-      rxbuf_pool.free(chunk);
+      //rxbuf_pool.free(chunk);
+        dynamic_free_chunk(chunk);
     }
 
     void set_rx_stat_logger(PerfCounters *logger) {

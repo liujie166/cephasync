@@ -160,7 +160,7 @@ void RDMADispatcher::post_chunk_to_pool(Chunk* chunk) {
   Mutex::Locker l(lock);
 
   get_stack()->get_infiniband().post_chunk_to_pool(chunk);
-  perf_logger->dec(l_msgr_rdma_rx_bufs_in_use);
+  //perf_logger->dec(l_msgr_rdma_rx_bufs_in_use);
   // handle a case when we have a limited number of
   // rx buffers and we could not post a required amount when polling
   if (post_backlog > 0) {
