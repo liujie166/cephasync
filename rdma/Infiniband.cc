@@ -866,7 +866,7 @@ char* Infiniband::MemoryManager::dynamic_malloc_chunk()
         ldout(cct, 0) << __func__ << " register memory failed..." << dendl;
         delete c->bptr;
         free(c);
-        return nullptr
+        return nullptr;
     }
     c->lkey   = c->mr->lkey;
     c->offset = 0;
