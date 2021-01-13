@@ -715,7 +715,7 @@ void AsyncConnection::process()
               data_blp = data_buf.begin();
             }
           }*/
-          msg_offset = (off & ~CEPH_PAGE_MASK);
+          msg_offset = (data_off & ~CEPH_PAGE_MASK);
           msg_left = data_len;
           state = STATE_OPEN_MESSAGE_READ_DATA;
         }
