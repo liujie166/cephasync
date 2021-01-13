@@ -718,7 +718,7 @@ void AsyncConnection::process()
             }
           }*/
           msg_offset = (data_off & ~CEPH_PAGE_MASK);
-          cout<<" data_offset = "<< data_off<< "CEPH_PAGE_MASK = " << CEPH_PAGE_MASK << "\n";
+          cout<<" data_offset = "<< data_off << " data_len = " << data_len << "\n";
           msg_left = data_len;
           state = STATE_OPEN_MESSAGE_READ_DATA;
         }
@@ -728,7 +728,7 @@ void AsyncConnection::process()
           while (msg_left > 0) {
             //bufferptr bp = data_blp.get_current_ptr();
             //unsigned read = std::min(bp.length(), msg_left);
-            r = zero_copy_read(msg_left + msg_offset);
+            r = zero_copy_read(msg_left);
             //r = zero_copy_read(msg_left);
             //r = read_until(read, bp.c_str());
             if (r < 0) {
@@ -739,8 +739,8 @@ void AsyncConnection::process()
             }
             //copy_small_data(bp.c_str(),read);
             //data.push_back(buffer::create(msg_offset));
-            append_large_data(data, msg_left + msg_offset);
-            set_firstptr_offset(data, msg_offset);
+            append_large_data(data, msg_left);
+            //set_firstptr_offset(data, msg_offset);
             //data_blp.advance(read);
             //data.append(bp, 0, read);
             //msg_left -= read;
