@@ -368,17 +368,17 @@ void AsyncConnection::append_large_data(bufferlist &bl, size_t len) {
 void AsyncConnection::copy_small_data(char* p,size_t len){
     uint32_t offset = 0;
     std::list<bufferptr>::const_iterator it = imcoming_bl.buffers().begin();
-    ldout(async_msgr->cct, 0) << __func__ << " imcoming_bl size =  " << imcoming_bl.buffers().size() << dendl;
+    ldout(async_msgr->cct, 10) << __func__ << " imcoming_bl size =  " << imcoming_bl.buffers().size() << dendl;
     while (it != imcoming_bl.buffers().end()) {
         const char * addr = it->c_str();
         if(len - offset > it->length()) {
             memcpy(p + offset, addr, it->length());
-            ldout(async_msgr->cct, 0) << __func__ << " imcoming bptr data size = " << it->length() << dendl;
+            ldout(async_msgr->cct, 10) << __func__ << " imcoming bptr data size = " << it->length() << dendl;
             offset += it->length();
         }
         else {
             memcpy(p + offset, addr, len - offset);
-            ldout(async_msgr->cct, 0) << __func__ << " imcoming bptr data size = " << len - offset << dendl;
+            ldout(async_msgr->cct, 10) << __func__ << " imcoming bptr data size = " << len - offset << dendl;
             offset += len - offset;
             break;
         }
@@ -678,7 +678,8 @@ void AsyncConnection::process()
           // read data
           unsigned data_len = le32_to_cpu(current_header.data_len);
           unsigned data_off = le32_to_cpu(current_header.data_off);
-          ldout(async_msgr->cct, 0) << __func__ << "[debug 0] data_len = " << data_len << "data_offset = " << data_off << dendl;
+          if(!data_off)
+            ldout(async_msgr->cct, 0) << __func__ << "[debug 0] data_len = " << data_len << " ,data_offset = " << data_off << dendl;
           if (data_len) {
             // get a buffer
             map<ceph_tid_t,pair<bufferlist,int> >::iterator p = rx_buffers.find(current_header.tid);
