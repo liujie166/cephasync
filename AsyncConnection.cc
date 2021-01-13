@@ -718,7 +718,7 @@ void AsyncConnection::process()
             }
           }*/
           msg_offset = (data_off & ~CEPH_PAGE_MASK);
-          cout<<" data_offset = "<< data_off << " data_len = " << data_len << "\n";
+          //cout<<" data_offset = "<< data_off << " data_len = " << data_len << "\n";
           msg_left = data_len;
           state = STATE_OPEN_MESSAGE_READ_DATA;
         }
@@ -729,7 +729,7 @@ void AsyncConnection::process()
             //bufferptr bp = data_blp.get_current_ptr();
             //unsigned read = std::min(bp.length(), msg_left);
             r = zero_copy_read(msg_left);
-            cout << " zero_copy_read len = " << r << "\n";
+            //cout << " zero_copy_read len = " << r << "\n";
             //r = zero_copy_read(read);
             //r = read_until(read, bp.c_str());
             if (r < 0) {
@@ -750,7 +750,7 @@ void AsyncConnection::process()
 
           if (msg_left > 0)
             break;
-          cout << " read data len = " << msg_left << "\n";
+          //cout << " read data len = " << msg_left << "\n";
           state = STATE_OPEN_MESSAGE_READ_FOOTER_AND_DISPATCH;
         }
 
