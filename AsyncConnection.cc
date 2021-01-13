@@ -718,7 +718,7 @@ void AsyncConnection::process()
             }
           }*/
           msg_offset = (data_off & ~CEPH_PAGE_MASK);
-          cout<<" data_offset = "<<data_offset<<"\n";
+          cout<<" data_offset = "<< data_off<< "CEPH_PAGE_MASK = " << CEPH_PAGE_MASK << "\n";
           msg_left = data_len;
           state = STATE_OPEN_MESSAGE_READ_DATA;
         }
