@@ -699,7 +699,7 @@ void AsyncConnection::process()
           unsigned data_off = le32_to_cpu(current_header.data_off);
           if(data_off)
             ldout(async_msgr->cct, 0) << __func__ << "[debug 0] data_len = " << data_len << " ,data_offset = " << data_off << dendl;
-          /*if (data_len) {
+          if (data_len) {
             // get a buffer
             map<ceph_tid_t,pair<bufferlist,int> >::iterator p = rx_buffers.find(current_header.tid);
             if (p != rx_buffers.end()) {
@@ -716,7 +716,7 @@ void AsyncConnection::process()
               alloc_aligned_buffer(data_buf, data_len, data_off);
               data_blp = data_buf.begin();
             }
-          }*/
+          }
           msg_offset = (data_off & ~CEPH_PAGE_MASK);
           cout<<" data_offset = "<< data_off << " data_len = " << data_len << "\n";
           msg_left = data_len;
@@ -726,10 +726,11 @@ void AsyncConnection::process()
       case STATE_OPEN_MESSAGE_READ_DATA:
         {
           while (msg_left > 0) {
-            //bufferptr bp = data_blp.get_current_ptr();
-            //unsigned read = std::min(bp.length(), msg_left);
-            r = zero_copy_read(msg_left);
+            bufferptr bp = data_blp.get_current_ptr();
+            unsigned read = std::min(bp.length(), msg_left);
             //r = zero_copy_read(msg_left);
+            cout << " zero_copy read len = " << read << "\n";
+            r = zero_copy_read(read);
             //r = read_until(read, bp.c_str());
             if (r < 0) {
               ldout(async_msgr->cct, 1) << __func__ << " read data error " << dendl;
@@ -737,14 +738,14 @@ void AsyncConnection::process()
             } else if (r > 0) {
               break;
             }
-            //copy_small_data(bp.c_str(),read);
+            copy_small_data(bp.c_str(),read);
             //data.push_back(buffer::create(msg_offset));
-            append_large_data(data, msg_left);
+            //append_large_data(data, msg_left);
             //set_firstptr_offset(data, msg_offset);
-            //data_blp.advance(read);
-            //data.append(bp, 0, read);
-            //msg_left -= read;
-            msg_left -= r;
+            data_blp.advance(read);
+            data.append(bp, 0, read);
+            msg_left -= read;
+            //msg_left -= r;
           }
 
           if (msg_left > 0)
