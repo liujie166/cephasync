@@ -752,7 +752,7 @@ char* Infiniband::MemoryManager::dynamic_malloc_chunk()
     c->lkey   = c->mr->lkey;
     c->offset = 0;
     c->buffer = c->bptr->c_str();
-    ldout(cct, 0) << __func__ << " succeed to malloc a chunk and return it..." << dendl;
+    ldout(cct, 20) << __func__ << " succeed to malloc a chunk and return it..." << dendl;
     return reinterpret_cast<char *>(c);
 }
 
@@ -953,7 +953,7 @@ int Infiniband::post_chunks_to_srq(int num)
   ibv_recv_wr *badworkrequest;
   ret = ibv_post_srq_recv(srq, &rx_work_request[0], &badworkrequest);
   assert(ret == 0);
-  ldout(cct, 0) << __func__ << " post " << i << "rx_request to srq" << ", ret = " << ret << dendl;
+  ldout(cct, 20) << __func__ << " post " << i << " rx_request to srq" << ", ret = " << ret << dendl;
   return i;
 }
 
