@@ -745,7 +745,7 @@ void AsyncConnection::process()
             //data_blp.advance(read);
             //data.append(bp, 0, read);
             //msg_left -= read;
-            msg_left -= r;
+            msg_left = 0;
           }
 
           if (msg_left > 0)
