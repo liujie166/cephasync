@@ -365,21 +365,21 @@ void AsyncConnection::append_large_data(bufferlist &bl, size_t len) {
     imcoming_bl.splice(0, len, &bl);
 }
 
-void AsyncConnection::set_firstptr_offset(bufferlist &bl, unsigned offset){
-    if(!offset)
+void AsyncConnection::set_firstptr_offset(bufferlist &bl, unsigned d_off){
+    if(!d_off)
         return;
     std::list<bufferptr>::const_iterator it = imcoming_bl.buffers().begin();
     for(;it!=imcoming_bl.buffers().end();it++){
-        if(it->length() > offset ){
-            it->set_offset(it->start() + offset);
-            offset = 0;
+        if(it->length() > d_off){
+            it->set_offset(it->start() + d_off);
+            d_off = 0;
         }
         else{
             it->set_offset(it->end());
-            offset -= it->length();
+            d_off -= it->length();
         }
 
-        if(offset == 0)
+        if(d_off == 0)
             break;
     }
 }
