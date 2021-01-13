@@ -368,7 +368,7 @@ void AsyncConnection::append_large_data(bufferlist &bl, size_t len) {
 void AsyncConnection::set_firstptr_offset(bufferlist &bl, unsigned d_off){
     if(!d_off)
         return;
-    std::list<bufferptr>::iterator it = imcoming_bl.buffers().begin();
+    std::list<bufferptr>::iterator it = imcoming_bl.noconst_buffers().begin();
     for(;it!=imcoming_bl.buffers().end();it++){
         if(it->length() > d_off){
             it->set_offset(it->start() + d_off);
