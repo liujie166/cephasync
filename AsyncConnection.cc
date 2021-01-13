@@ -749,7 +749,7 @@ void AsyncConnection::process()
 
           if (msg_left > 0)
             break;
-
+          cout << " read data len = " << msg_left << "\n";
           state = STATE_OPEN_MESSAGE_READ_FOOTER_AND_DISPATCH;
         }
 
