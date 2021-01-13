@@ -60,6 +60,7 @@ class AsyncConnection : public Connection {
   void prepare_send_message(uint64_t features, Message *m, bufferlist &bl);
   void copy_small_data(char*, size_t);
   void append_large_data(bufferlist&,size_t);
+  void set_firstptr_offset(bufferlist &bl, unsigned offset);
   ssize_t read_until(unsigned needed, char *p);
   ssize_t zero_copy_read(unsigned len);
   ssize_t _process_connection();
