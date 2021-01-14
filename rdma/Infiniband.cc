@@ -774,7 +774,7 @@ char* Infiniband::MemoryManager::dynamic_malloc_chunk()
 
 void Infiniband::MemoryManager::dynamic_free_chunk(Chunk *c)
 {
-   std::unordered_map<ibv_mr*, int>::iterator it = understanding_map.find(c->mr);
+   std::unordered_map<ibv_mr*, int>::iterator it = understanding_mr.find(c->mr);
    if (it != understanding_mr.end()) {
      if((--it->second) == 0){
        ibv_dereg_mr(c->mr);
