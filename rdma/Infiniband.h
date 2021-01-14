@@ -446,6 +446,9 @@ class Infiniband {
   void post_chunk_to_pool(Chunk* chunk) {
     get_memory_manager()->release_rx_buffer(chunk);
   }
+  void dereg_memory(Chunk* chunk) {
+      get_memory_manager()->dereg_memory(chunk);
+  }
   int get_tx_buffers(std::vector<Chunk*> &c, size_t bytes);
   CompletionChannel *create_comp_channel(CephContext *c);
   CompletionQueue *create_comp_queue(CephContext *c, CompletionChannel *cc=NULL);

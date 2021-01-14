@@ -762,7 +762,6 @@ char* Infiniband::MemoryManager::dynamic_malloc_chunk()
       c->buffer  = c->bptr->c_str();
       free_chunks.push_back(c);
     }
-    c->is_end = true;
     ldout(cct, 20) << __func__ << " succeed to malloc a chunk and return it..." << dendl;
     Chunk* ret = free_chunks.front();
     free_chunks.pop_front();
