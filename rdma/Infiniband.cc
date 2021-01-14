@@ -725,42 +725,62 @@ int Infiniband::MemoryManager::get_send_buffers(std::vector<Chunk*> &c, size_t b
 {
   return send->get_buffers(c, bytes);
 }
-
+#define REGION_MEM 1048576
 char* Infiniband::MemoryManager::dynamic_malloc_chunk()
 {
-    Chunk* c;
-    c = static_cast<Chunk *>(malloc(sizeof(Chunk)));
+    if(!free_chunks.empty()){
+      Chunk* cur = free_chunks.front();
+      free_chunks.pop_front();
+      return reinterpret_cast<char *>(cur);
+    }
+
+    Chunk*     c   = nullptr;
+    bufferptr* mem = nullptr;
+    ibv_mr*    mr  = nullptr;
+
+    unsigned int num = REGION_MEM/cct->_conf->ms_async_rdma_buffer_size + 1;
+    c = static_cast<Chunk *>(num * malloc(sizeof(Chunk)));
     if(!c){
         ldout(cct, 0) << __func__ << " malloc Chunk failed..." << dendl;
         return nullptr;
     }
-    c->bytes = cct->_conf->ms_async_rdma_buffer_size;
-    c->bptr = new bufferptr(c->bytes);
+    mem = new bufferptr(num * (c->bytes));
+    if(!mem){
+      ldout(cct, 0) << __func__ << " create bufferptr failed..." << dendl;
+      free(c);
+      return nullptr;
+    }
+    mr  = ibv_reg_mr(pd->pd, mem->c_str(), mem->length(), IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_LOCAL_WRITE);
+
+
     //cout << "dynamic malloc, bptr addr is " << c->bptr << "\n";
-    if(!c->bptr){
-        ldout(cct, 0) << __func__ << " create bufferptr failed..." << dendl;
-        free(c);
-        return nullptr;
-    }
-    c->mr = ibv_reg_mr(pd->pd, c->bptr->c_str(), c->bytes, IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_LOCAL_WRITE);
-    if(!c->mr){
+    if(!mr){
         ldout(cct, 0) << __func__ << " register memory failed..." << dendl;
-        delete c->bptr;
+        delete mem;
         free(c);
         return nullptr;
     }
-    c->lkey   = c->mr->lkey;
-    c->offset = 0;
-    c->buffer = c->bptr->c_str();
+    for(int i = 0; i < num; i++) {
+      c[i]->mr      = mr;
+      c[i]->bytes   = cct->_conf->ms_async_rdma_buffer_size;
+      c[i]->lkey    = mr->lkey;
+      c[i]->offset  = 0;
+      c[i]->bptr    = std::move(bufferptr(*mem, i*c[i]->bytes,c[i]->bytes))
+      c[i]->buffer  = c->bptr->c_str();
+      free_chunks.push_back(c[i]);
+    }
+    c[i-1]->prepare_for_free = reinterpret_cast<char *>(c);
     ldout(cct, 20) << __func__ << " succeed to malloc a chunk and return it..." << dendl;
-    return reinterpret_cast<char *>(c);
+    return reinterpret_cast<char *>(free_chunks.front());
 }
 
 void Infiniband::MemoryManager::dynamic_free_chunk(Chunk *c)
 {
-   ibv_dereg_mr(c->mr);
+   if(c->prepare_for_free) {
+     ibv_dereg_mr(c->mr);
+     free(c->prepare_for_free);
+   }
    delete c->bptr;
-   free(c);
 }
 
 static std::atomic<bool> init_prereq = {false};

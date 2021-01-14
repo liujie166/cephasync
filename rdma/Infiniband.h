@@ -214,7 +214,7 @@ class Infiniband {
       uint32_t bytes;
       uint32_t bound = 0;
       uint32_t offset;
-
+      char* prepare_for_free = nullptr;
       char* buffer;// TODO: remove buffer/refactor TX
       char data[0];
     };
@@ -286,6 +286,7 @@ class Infiniband {
     Cluster* send = nullptr;// SEND
     Device *device;
     ProtectionDomain *pd;
+    std::list<Chunk *> free_chunks;
 
 
     void* huge_pages_malloc(size_t size);
