@@ -258,7 +258,7 @@ class Infiniband {
     bool is_tx_buffer(const char* c) { return send->is_my_buffer(c); }
     char *dynamic_malloc_chunk();
     void dynamic_free_chunk(Chunk *);
-    void Infiniband::MemoryManager::dereg_memory(Chunk *c);
+    void dereg_memory(Chunk *c);
     Chunk *get_tx_chunk_by_buffer(const char *c) {
       return send->get_chunk_by_buffer(c);
     }
