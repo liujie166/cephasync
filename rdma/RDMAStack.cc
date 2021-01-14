@@ -247,10 +247,11 @@ void RDMADispatcher::polling()
       post_backlog += rx_ret;
       if(post_backlog > threshold) {
         uint64_t beg = Cycles::rdtsc();
+        auto record = post_backlog;
         post_backlog -= get_stack()->get_infiniband().post_chunks_to_srq(post_backlog);
         uint64_t end = Cycles::rdtsc();
         ldout(cct, 0) << __func__ << " malloc and register use " << Cycles::to_microseconds(end - beg, 0) << " us "
-                      << ", totally " << post_backlog << " chunks" << dendl;
+                      << ", totally " << record << " chunks" << dendl;
       }
     }
 
