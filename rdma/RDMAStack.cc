@@ -158,8 +158,11 @@ void RDMADispatcher::handle_async_event()
 
 void RDMADispatcher::post_chunk_to_pool(Chunk* chunk) {
   //Mutex::Locker l(lock);
-
+  uint64_t beg = Cycles::rdtsc();
   get_stack()->get_infiniband().post_chunk_to_pool(chunk);
+  uint64_t end = Cycles::rdtsc();
+  ldout(cct, 0) << __func__ << " free and deregister one chunk use "
+  << Cycles::to_microseconds(end - beg, 0) << " us " <<dendl;
   //perf_logger->dec(l_msgr_rdma_rx_bufs_in_use);
   // handle a case when we have a limited number of
   // rx buffers and we could not post a required amount when polling
