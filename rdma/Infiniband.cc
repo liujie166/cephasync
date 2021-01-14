@@ -745,7 +745,7 @@ char* Infiniband::MemoryManager::dynamic_malloc_chunk()
     //cout << "dynamic malloc, bptr addr is " << c->bptr << "\n";
     if(!mr){
         ldout(cct, 0) << __func__ << " register memory failed..." << dendl;
-        mem.release();
+        mem.~bufferptr();
         return nullptr;
     }
     for(unsigned i = 0; i < num; i++) {
