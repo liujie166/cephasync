@@ -741,7 +741,7 @@ char* Infiniband::MemoryManager::dynamic_malloc_chunk()
     bufferptr mem(num * (cct->_conf->ms_async_rdma_buffer_size));
 
     mr  = ibv_reg_mr(pd->pd, mem.c_str(), mem.length(), IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_LOCAL_WRITE);
-    understanding_mr.emplace(mr, num);
+    //understanding_mr.emplace(mr, num);
     //cout << "dynamic malloc, bptr addr is " << c->bptr << "\n";
     if(!mr){
         ldout(cct, 0) << __func__ << " register memory failed..." << dendl;
