@@ -751,7 +751,7 @@ char* Infiniband::MemoryManager::dynamic_malloc_chunk()
         delete mem;
         return nullptr;
     }
-    for(int i = 0; i < num; i++) {
+    for(unsigned i = 0; i < num; i++) {
       c = static_cast<Chunk *>(malloc(sizeof(Chunk)));
       if(!c){
         ldout(cct, 0) << __func__ << " malloc Chunk failed..." << dendl;
