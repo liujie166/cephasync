@@ -737,7 +737,7 @@ char* Infiniband::MemoryManager::dynamic_malloc_chunk()
     Chunk*     c   = nullptr;
     ibv_mr*    mr  = nullptr;
 
-    unsigned int num = REGION_MEM/cct->_conf->ms_async_rdma_buffer_size + 1;
+    int num = REGION_MEM/cct->_conf->ms_async_rdma_buffer_size + 1;
     bufferptr mem(num * (cct->_conf->ms_async_rdma_buffer_size));
 
     mr  = ibv_reg_mr(pd->pd, mem.c_str(), mem.length(), IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_LOCAL_WRITE);
