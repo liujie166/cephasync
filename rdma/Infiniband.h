@@ -287,7 +287,7 @@ class Infiniband {
     Device *device;
     ProtectionDomain *pd;
     std::list<Chunk *> free_chunks;
-    //std::unordered_map<ibv_mr *, int> understanding_mr;
+    std::unordered_map<ibv_mr *, int> understanding_mr;
 
 
     void* huge_pages_malloc(size_t size);
