@@ -214,7 +214,6 @@ class Infiniband {
       uint32_t bytes;
       uint32_t bound = 0;
       uint32_t offset;
-      bool is_end = false;
       char* buffer;// TODO: remove buffer/refactor TX
       char data[0];
     };
@@ -287,6 +286,7 @@ class Infiniband {
     Device *device;
     ProtectionDomain *pd;
     std::list<Chunk *> free_chunks;
+    std::unordered_map<ibv_mr *, int> understanding_mr;
 
 
     void* huge_pages_malloc(size_t size);

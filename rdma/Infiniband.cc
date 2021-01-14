@@ -745,6 +745,7 @@ char* Infiniband::MemoryManager::dynamic_malloc_chunk()
       return nullptr;
     }
     mr  = ibv_reg_mr(pd->pd, mem->c_str(), mem->length(), IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_LOCAL_WRITE);
+    understanding_mr.emplace(mr, num);
     //cout << "dynamic malloc, bptr addr is " << c->bptr << "\n";
     if(!mr){
         ldout(cct, 0) << __func__ << " register memory failed..." << dendl;
@@ -765,7 +766,6 @@ char* Infiniband::MemoryManager::dynamic_malloc_chunk()
       c->buffer  = c->bptr->c_str();
       free_chunks.push_back(c);
     }
-    c->is_end = true;
     ldout(cct, 20) << __func__ << " succeed to malloc a chunk and return it..." << dendl;
     Chunk* ret = free_chunks.front();
     free_chunks.pop_front();
@@ -774,9 +774,14 @@ char* Infiniband::MemoryManager::dynamic_malloc_chunk()
 
 void Infiniband::MemoryManager::dynamic_free_chunk(Chunk *c)
 {
-   if(c->is_end) {
-     ibv_dereg_mr(c->mr);
+   std::unordered_map<ibv_mr*, int>::iterator it = understanding_map.find(c->mr);
+   if (it != understanding_mr.end()) {
+     if((--it->second) == 0){
+       ibv_dereg_mr(c->mr);
+       understanding_mr.erase(it);
+     }
    }
+
    delete c->bptr;
    free(c);
 }
