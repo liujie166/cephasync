@@ -189,7 +189,7 @@ void RDMADispatcher::polling()
   uint64_t last_inactive = Cycles::rdtsc();
   bool rearmed = false;
   int r = 0;
-  int threshold = cct->_conf->ms_async_rdma_receive_queue_len;
+  int threshold = (cct->_conf->ms_async_rdma_receive_queue_len)>>2;
   while (true) {
     int tx_ret = tx_cq->poll_cq(MAX_COMPLETIONS, wc);
     if (tx_ret > 0) {
