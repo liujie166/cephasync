@@ -215,6 +215,7 @@ void RDMADispatcher::polling()
       for (int i = 0; i < rx_ret; ++i) {
         ibv_wc* response = &wc[i];
         Chunk* chunk = reinterpret_cast<Chunk *>(response->wr_id);
+        get_stack()->get_infiniband().dereg_memory(chunk);
         //cout << "polling, bptr addr = " << chunk->bptr << "\n";
         ldout(cct, 25) << __func__ << " got chunk=" << chunk << " bytes:" << response->byte_len << " opcode:" << response->opcode << dendl;
 
