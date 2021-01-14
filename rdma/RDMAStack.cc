@@ -207,7 +207,7 @@ void RDMADispatcher::polling()
 
       Mutex::Locker l(lock);//make sure connected socket alive when pass wc
 
-      post_backlog += rx_ret - get_stack()->get_infiniband().post_chunks_to_srq(rx_ret);
+
 
       for (int i = 0; i < rx_ret; ++i) {
         ibv_wc* response = &wc[i];
@@ -243,6 +243,7 @@ void RDMADispatcher::polling()
       for (auto &&i : polled)
         i.first->pass_wc(std::move(i.second));
       polled.clear();
+      post_backlog += rx_ret - get_stack()->get_infiniband().post_chunks_to_srq(rx_ret);
     }
 
     if (!tx_ret && !rx_ret) {
