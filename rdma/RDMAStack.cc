@@ -244,11 +244,11 @@ void RDMADispatcher::polling()
         i.first->pass_wc(std::move(i.second));
       polled.clear();
 
-      int max_post_to_srq = (MAX_COMPLETIONS>>2);
+      /*int max_post_to_srq = (MAX_COMPLETIONS>>2);
       if(rx_ret < max_post_to_srq)
         post_backlog += rx_ret - get_stack()->get_infiniband().post_chunks_to_srq(rx_ret);
       else
-        post_backlog += rx_ret - get_stack()->get_infiniband().post_chunks_to_srq(max_post_to_srq);
+        post_backlog += rx_ret - get_stack()->get_infiniband().post_chunks_to_srq(max_post_to_srq);*/
     }
 
     if (!tx_ret && !rx_ret) {
