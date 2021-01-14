@@ -761,7 +761,7 @@ char* Infiniband::MemoryManager::dynamic_malloc_chunk()
       c->bytes   = cct->_conf->ms_async_rdma_buffer_size;
       c->lkey    = mr->lkey;
       c->offset  = 0;
-      c->bptr    = std::move(bufferptr(*mem, i*c->bytes,c->bytes))
+      c->bptr    = &bufferptr(*mem, i*c->bytes,c->bytes)
       c->buffer  = c->bptr->c_str();
       free_chunks.push_back(c);
     }
