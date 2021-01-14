@@ -459,10 +459,10 @@ ssize_t RDMAConnectedSocketImpl::read_buffers2(bufferlist &bl, size_t len)
 
     if (c != buffers.end() && (*c)->over())
         ++c;
-    auto c_free = buffers.begin();
+    /*auto c_free = buffers.begin();
     for (; c_free != c ; ++c_free) {
         dispatcher->post_chunk_to_pool(*c_free);
-    }
+    }*/
     buffers.erase(buffers.begin(), c);
     ldout(cct, 25) << __func__ << " got " << read  << " bytes, buffers size: " << buffers.size() << dendl;
     return read;
