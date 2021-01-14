@@ -729,9 +729,9 @@ int Infiniband::MemoryManager::get_send_buffers(std::vector<Chunk*> &c, size_t b
 char* Infiniband::MemoryManager::dynamic_malloc_chunk()
 {
     if(!free_chunks.empty()){
-      Chunk* cur = free_chunks.front();
+      Chunk* ret = free_chunks.front();
       free_chunks.pop_front();
-      return reinterpret_cast<char *>(cur);
+      return reinterpret_cast<char *>(ret);
     }
 
     Chunk*     c   = nullptr;
@@ -765,18 +765,20 @@ char* Infiniband::MemoryManager::dynamic_malloc_chunk()
       c->buffer  = c->bptr->c_str();
       free_chunks.push_back(c);
     }
-    c->prepare_for_free = reinterpret_cast<char *>(c);
+    c->is_end = true;
     ldout(cct, 20) << __func__ << " succeed to malloc a chunk and return it..." << dendl;
-    return reinterpret_cast<char *>(free_chunks.front());
+    Chunk* ret = free_chunks.front();
+    free_chunks.pop_front();
+    return reinterpret_cast<char *>(ret);
 }
 
 void Infiniband::MemoryManager::dynamic_free_chunk(Chunk *c)
 {
-   if(c->prepare_for_free) {
+   if(c->is_end) {
      ibv_dereg_mr(c->mr);
-     free(c->prepare_for_free);
    }
    delete c->bptr;
+   free(c);
 }
 
 static std::atomic<bool> init_prereq = {false};
