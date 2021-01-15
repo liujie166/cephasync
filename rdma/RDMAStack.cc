@@ -253,7 +253,7 @@ void RDMADispatcher::polling()
 
        if(post_backlog > threshold) {
         //uint64_t beg = Cycles::rdtsc();
-         int post_backlog += rx_ret;
+         post_backlog += rx_ret;
          post_backlog -= get_stack()->get_infiniband().post_chunks_to_srq(post_backlog, reg_window);
 
         //uint64_t end = Cycles::rdtsc();
