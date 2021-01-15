@@ -255,8 +255,7 @@ void RDMADispatcher::polling()
        else{
          reg_window = (int)(reg_window*3/4 + 1);
        }
-       int rr_num = (reg_window >= rx_ret) ? rx_ret : reg_window;
-       get_stack()->get_infiniband().post_chunks_to_srq(rr_num, reg_window);
+       get_stack()->get_infiniband().post_chunks_to_srq(rr_ret, reg_window);
       //if(post_backlog > threshold) {
         //uint64_t beg = Cycles::rdtsc();
         //auto record = post_backlog;
