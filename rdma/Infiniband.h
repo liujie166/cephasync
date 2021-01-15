@@ -256,7 +256,7 @@ class Infiniband {
     void return_tx(std::vector<Chunk*> &chunks);
     int get_send_buffers(std::vector<Chunk*> &c, size_t bytes);
     bool is_tx_buffer(const char* c) { return send->is_my_buffer(c); }
-    char *dynamic_malloc_chunk();
+    char *dynamic_malloc_chunk(window);
     void dynamic_free_chunk(Chunk *);
     void dereg_memory(Chunk *c);
     Chunk *get_tx_chunk_by_buffer(const char *c) {
@@ -266,9 +266,9 @@ class Infiniband {
       return send->buffer_size;
     }
     //dynamic allocate memory because we do not reuse it but message use it.
-    Chunk *get_rx_buffer() {
+    Chunk *get_rx_buffer(int window) {
        //return reinterpret_cast<Chunk *>(rxbuf_pool.malloc());
-       return reinterpret_cast<Chunk *>(dynamic_malloc_chunk());
+       return reinterpret_cast<Chunk *>(dynamic_malloc_chunk(window));
     }
 
     void release_rx_buffer(Chunk *chunk) {
@@ -442,7 +442,7 @@ class Infiniband {
   QueuePair* create_queue_pair(CephContext *c, CompletionQueue*, CompletionQueue*, ibv_qp_type type);
   ibv_srq* create_shared_receive_queue(uint32_t max_wr, uint32_t max_sge);
   // post rx buffers to srq, return number of buffers actually posted
-  int  post_chunks_to_srq(int num);
+  int  post_chunks_to_srq(int num, int window);
   void post_chunk_to_pool(Chunk* chunk) {
     get_memory_manager()->release_rx_buffer(chunk);
   }
