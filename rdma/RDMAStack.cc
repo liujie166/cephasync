@@ -192,7 +192,7 @@ void RDMADispatcher::polling()
   uint64_t last_inactive = Cycles::rdtsc();
   bool rearmed = false;
   int r = 0;
-  rr_inflights = cct->_conf->ms_async_rdma_receive_queue_len;
+  //rr_inflights = cct->_conf->ms_async_rdma_receive_queue_len;
   while (true) {
     int tx_ret = tx_cq->poll_cq(MAX_COMPLETIONS, wc);
     if (tx_ret > 0) {
@@ -263,7 +263,7 @@ void RDMADispatcher::polling()
            hungry={false};
            break;
          }
-       }while(left > 0)
+       }while(left > 0);
        //post_backlog += post_times;
 
       //if(post_backlog > threshold) {
