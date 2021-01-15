@@ -253,11 +253,11 @@ void RDMADispatcher::polling()
          reg_window++;
        }
        else{
-         reg_window = reg_window/2;
+         reg_window = (int)(reg_window/2 + 1);
        }
        post_backlog = rx_ret;
        int rr_num = (reg_window >= rx_ret) ? rx_ret : reg_window;
-       post_backlog -= get_stack()->get_infiniband().post_chunks_to_srq(rr_num, reg_window);
+       get_stack()->get_infiniband().post_chunks_to_srq(rr_num, reg_window);
       //if(post_backlog > threshold) {
         //uint64_t beg = Cycles::rdtsc();
         //auto record = post_backlog;
