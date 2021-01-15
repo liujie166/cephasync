@@ -725,7 +725,7 @@ int Infiniband::MemoryManager::get_send_buffers(std::vector<Chunk*> &c, size_t b
 {
   return send->get_buffers(c, bytes);
 }
-#define REGION_MEM 4194304
+#define REGION_MEM 1048576
 char* Infiniband::MemoryManager::dynamic_malloc_chunk()
 {
     if(!free_chunks.empty()){
