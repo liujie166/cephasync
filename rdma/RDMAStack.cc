@@ -172,13 +172,13 @@ void RDMADispatcher::post_chunk_to_pool(Chunk* chunk) {
   }*/
 }
 
-void RDMADispatcher::post_chunks_to_srq() {
+/*void RDMADispatcher::post_chunks_to_srq() {
     Mutex::Locker l(lock);
     if (post_backlog > 0) {
        ldout(cct, 20) << __func__ << " post_backlog is " << post_backlog << dendl;
        post_backlog -= get_stack()->get_infiniband().post_chunks_to_srq(post_backlog);
     }
-}
+}*/
 
 void RDMADispatcher::polling()
 {
