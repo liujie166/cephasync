@@ -950,8 +950,6 @@ int Infiniband::post_chunks_to_srq(int num, int window)
   ibv_sge isge[num];
   Chunk* chunk;
   ibv_recv_wr rx_work_request[num];
-  uint32_t last_key = 0;
-  int beg_wr = 0;
   while (i < num) {
     chunk = get_memory_manager()->get_rx_buffer(window);
     chunk->self = chunk;
@@ -971,35 +969,24 @@ int Infiniband::post_chunks_to_srq(int num, int window)
 
     memset(&rx_work_request[i], 0, sizeof(rx_work_request[i]));
     rx_work_request[i].wr_id = reinterpret_cast<uint64_t>(chunk->self);// stash descriptor ptr
-    /*if (i == num - 1) {
+    if (i == num - 1) {
       rx_work_request[i].next = 0;
     } else {
       rx_work_request[i].next = &rx_work_request[i+1];
-    }*/
+    }
     rx_work_request[i].next = 0;
     rx_work_request[i].sg_list = &isge[i];
     rx_work_request[i].num_sge = 1;
-    ibv_recv_wr *badworkrequest;
-    ret = ibv_post_srq_recv(srq, &rx_work_request[i], &badworkrequest);
-    assert(ret == 0);
-    ldout(cct, 20) << __func__ << " post " << i << " rx_request to srq" << ", ret = " << ret << dendl;
-    /*if(last_key != chunk->lkey && i != 0){
-      rx_work_request[i-1].next = 0;
-      ibv_recv_wr *badworkrequest;
-      ret = ibv_post_srq_recv(srq, &rx_work_request[beg_wr], &badworkrequest);
-      beg_wr = i;
-      assert(ret == 0);
-      ldout(cct, 20) << __func__ << " post " << i << " rx_request to srq" << ", ret = " << ret << dendl;
-    }
-    last_key = chunk->lkey;*/
+
+
     i++;
   }
-  /*ibv_recv_wr *badworkrequest;
+  ibv_recv_wr *badworkrequest;
   ret = ibv_post_srq_recv(srq, &rx_work_request[beg_wr], &badworkrequest);
   assert(ret == 0);
   ldout(cct, 20) << __func__ << " post " << i << " rx_request to srq" << ", ret = " << ret << dendl;
-  return i;*/
   return i;
+
 }
 
 Infiniband::CompletionChannel* Infiniband::create_comp_channel(CephContext *c)
