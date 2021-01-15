@@ -192,7 +192,7 @@ void RDMADispatcher::polling()
   uint64_t last_inactive = Cycles::rdtsc();
   bool rearmed = false;
   int r = 0;
-
+  rr_inflights = cct->_conf->ms_async_rdma_receive_queue_len;
   while (true) {
     int tx_ret = tx_cq->poll_cq(MAX_COMPLETIONS, wc);
     if (tx_ret > 0) {
@@ -258,8 +258,9 @@ void RDMADispatcher::polling()
        int post_times = rx_ret/reg_window;
        post_times = (post_times) ? post_times : 1;
        post_backlog += post_times;
-       for(; have_conn_buffer_empty && (post_backlog == 0); post_backlog--) {
-         get_stack()->get_infiniband().post_chunks_to_srq(rx_ret, reg_window);
+       rr_inflights -= rx_ret;
+       for(; (!have_conn_buffer_empty) && (post_backlog > 0); post_backlog--) {
+         rr_inflights += get_stack()->get_infiniband().post_chunks_to_srq(rx_ret, reg_window);
        }
       //if(post_backlog > threshold) {
         //uint64_t beg = Cycles::rdtsc();
