@@ -255,14 +255,17 @@ void RDMADispatcher::polling()
        else{
          reg_window = (int)(reg_window*3/4 + 1);
        }*/
-       int post_times = rx_ret/reg_window;
-       post_times = (post_times) ? post_times : 1;
-       post_backlog += post_times;
-       rr_inflights -= rx_ret;
-       for(;(!rr_inflights) || ((!have_conn_buffer_empty) && (post_backlog > 0)); post_backlog--) {
-         rr_inflights += get_stack()->get_infiniband().post_chunks_to_srq(reg_window, reg_window);
-       }
-       have_conn_buffer_empty = false;
+       int left = rx_ret;
+       do{
+         get_stack()->get_infiniband().post_chunks_to_srq(4, reg_window);
+         left--;
+         if(hungry){
+           hungry={false};
+           break;
+         }
+       }while(left > 0)
+       //post_backlog += post_times;
+
       //if(post_backlog > threshold) {
         //uint64_t beg = Cycles::rdtsc();
         //auto record = post_backlog;
