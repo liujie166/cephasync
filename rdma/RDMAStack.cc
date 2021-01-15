@@ -248,14 +248,19 @@ void RDMADispatcher::polling()
         i.first->pass_wc(std::move(i.second));
       polled.clear();
 
-       bool is_empty = have_conn_buffer_empty;
-       if(!is_empty){
+
+       /*if(!is_empty){
          reg_window++;
        }
        else{
          reg_window = (int)(reg_window*3/4 + 1);
+       }*/
+       int post_times = rx_ret/reg_window;
+       post_times = (post_times) ? post_time : 1;
+       post_backlog += post_times;
+       for(; have_conn_buffer_empty && (post_backlog == 0); post_backlog--) {
+         get_stack()->get_infiniband().post_chunks_to_srq(rx_ret, reg_window);
        }
-       get_stack()->get_infiniband().post_chunks_to_srq(rx_ret, reg_window);
       //if(post_backlog > threshold) {
         //uint64_t beg = Cycles::rdtsc();
         //auto record = post_backlog;
