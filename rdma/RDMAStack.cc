@@ -192,7 +192,7 @@ void RDMADispatcher::polling()
   uint64_t last_inactive = Cycles::rdtsc();
   bool rearmed = false;
   int r = 0;
-  //rr_inflights = cct->_conf->ms_async_rdma_receive_queue_len;
+  int threshold = cct->_conf->ms_async_rdma_receive_queue_len>1;
   while (true) {
     int tx_ret = tx_cq->poll_cq(MAX_COMPLETIONS, wc);
     if (tx_ret > 0) {
@@ -249,30 +249,17 @@ void RDMADispatcher::polling()
       polled.clear();
 
 
-       /*if(!is_empty){
-         reg_window++;
-       }
-       else{
-         reg_window = (int)(reg_window*3/4 + 1);
-       }*/
-       int left = rx_ret;
-       do{
-         get_stack()->get_infiniband().post_chunks_to_srq(4, reg_window);
-         left--;
-         if(hungry){
-           hungry={false};
-           break;
-         }
-       }while(left > 0);
-       //post_backlog += post_times;
 
-      //if(post_backlog > threshold) {
+
+       if(post_backlog > threshold) {
         //uint64_t beg = Cycles::rdtsc();
-        //auto record = post_backlog;
+         int post_backlog += rx_ret;
+         post_backlog -= get_stack()->get_infiniband().post_chunks_to_srq(post_backlog, reg_window);
+
         //uint64_t end = Cycles::rdtsc();
         //ldout(cct, 0) << __func__ << " malloc and register use " << Cycles::to_microseconds(end - beg, 0) << " us "
         //              << ", totally " << record << " chunks" << dendl;
-      //}
+       }
 
     }
 
