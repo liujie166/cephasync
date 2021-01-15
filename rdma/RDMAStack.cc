@@ -248,7 +248,7 @@ void RDMADispatcher::polling()
         i.first->pass_wc(std::move(i.second));
       polled.clear();
 
-      //post_backlog += rx_ret;
+       post_backlog += rx_ret;
       //if(post_backlog > threshold) {
         //uint64_t beg = Cycles::rdtsc();
         //auto record = post_backlog;
