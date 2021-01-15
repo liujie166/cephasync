@@ -978,6 +978,7 @@ int Infiniband::post_chunks_to_srq(int num, int window)
     }
     rx_work_request[i].sg_list = &isge[i];
     rx_work_request[i].num_sge = 1;
+
     if(last_key != chunk->lkey && i != 0){
       rx_work_request[i-1].next = 0;
       ibv_recv_wr *badworkrequest;
