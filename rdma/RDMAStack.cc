@@ -259,9 +259,10 @@ void RDMADispatcher::polling()
        post_times = (post_times) ? post_times : 1;
        post_backlog += post_times;
        rr_inflights -= rx_ret;
-       for(; (!have_conn_buffer_empty) && (post_backlog > 0); post_backlog--) {
+       for(;(!rr_inflights) || ((!have_conn_buffer_empty) && (post_backlog > 0)); post_backlog--) {
          rr_inflights += get_stack()->get_infiniband().post_chunks_to_srq(rx_ret, reg_window);
        }
+       have_conn_buffer_empty = false;
       //if(post_backlog > threshold) {
         //uint64_t beg = Cycles::rdtsc();
         //auto record = post_backlog;
