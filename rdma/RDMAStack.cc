@@ -248,14 +248,13 @@ void RDMADispatcher::polling()
         i.first->pass_wc(std::move(i.second));
       polled.clear();
 
-
-       if(post_backlog >= rx_ret){
+       bool is_empty = have_conn_buffer_empty;
+       if(!is_empty){
          reg_window++;
        }
        else{
-         reg_window = (int)(reg_window/2 + 1);
+         reg_window = (int)(reg_window*3/4 + 1);
        }
-       post_backlog = rx_ret;
        int rr_num = (reg_window >= rx_ret) ? rx_ret : reg_window;
        get_stack()->get_infiniband().post_chunks_to_srq(rr_num, reg_window);
       //if(post_backlog > threshold) {

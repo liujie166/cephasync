@@ -119,9 +119,10 @@ class RDMADispatcher {
   void post_tx_buffer(std::vector<Chunk*> &chunks);
 
   std::atomic<uint64_t> inflight = {0};
-
+  std::atomic<bool> have_conn_buffer_empty = {false};
   void post_chunk_to_pool(Chunk* chunk);
   void post_chunks_to_srq();
+  void notify_buffers_empty(){ have_conn_buffer_empty = true;}
 };
 
 class RDMAWorker : public Worker {
