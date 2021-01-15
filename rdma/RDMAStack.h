@@ -48,7 +48,6 @@ class RDMADispatcher {
   std::atomic<uint64_t> num_dead_queue_pair = {0};
   std::atomic<uint64_t> num_qp_conn = {0};
   int post_backlog = 0;
-  int reg_window = 16;//1mb
   Mutex lock; // protect `qp_conns`, `dead_queue_pairs`
   // qp_num -> InfRcConnection
   // The main usage of `qp_conns` is looking up connection by qp_num,
@@ -119,10 +118,9 @@ class RDMADispatcher {
   void post_tx_buffer(std::vector<Chunk*> &chunks);
 
   std::atomic<uint64_t> inflight = {0};
-  std::atomic<bool> hungry = {false};
+
   void post_chunk_to_pool(Chunk* chunk);
   void post_chunks_to_srq();
-  void notify_buffers_empty(){ hungry = {true};}
 };
 
 class RDMAWorker : public Worker {

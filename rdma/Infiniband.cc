@@ -725,8 +725,8 @@ int Infiniband::MemoryManager::get_send_buffers(std::vector<Chunk*> &c, size_t b
 {
   return send->get_buffers(c, bytes);
 }
-
-char* Infiniband::MemoryManager::dynamic_malloc_chunk(int window)
+#define REGION_MEM 1048576
+char* Infiniband::MemoryManager::dynamic_malloc_chunk()
 {
     if(!free_chunks.empty()){
       Chunk* ret = free_chunks.front();
@@ -737,7 +737,7 @@ char* Infiniband::MemoryManager::dynamic_malloc_chunk(int window)
     Chunk*     c   = nullptr;
     ibv_mr*    mr  = nullptr;
 
-    int num = window;
+    int num = REGION_MEM/cct->_conf->ms_async_rdma_buffer_size + 1;
     bufferptr mem(num * (cct->_conf->ms_async_rdma_buffer_size));
 
     mr  = ibv_reg_mr(pd->pd, mem.c_str(), mem.length(), IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_LOCAL_WRITE);
@@ -885,7 +885,7 @@ void Infiniband::init()
 
   srq = create_shared_receive_queue(rx_queue_len, MAX_SHARED_RX_SGE_COUNT);
 
-  post_chunks_to_srq(rx_queue_len, rx_queue_len); //add to srq
+  post_chunks_to_srq(rx_queue_len); //add to srq
 }
 
 Infiniband::~Infiniband()
@@ -899,7 +899,7 @@ Infiniband::~Infiniband()
 }
 
 /**
- * Create a shared receive queue. This basically wraps the verbs call. 
+ * Create a shared receive queue. This basically wraps the verbs call.
  *
  * \param[in] max_wr
  *      The max number of outstanding work requests in the SRQ.
@@ -944,14 +944,15 @@ Infiniband::QueuePair* Infiniband::create_queue_pair(CephContext *cct, Completio
   return qp;
 }
 
-int Infiniband::post_chunks_to_srq(int num, int window)
+int Infiniband::post_chunks_to_srq(int num)
 {
   int ret, i = 0;
   ibv_sge isge[num];
   Chunk* chunk;
   ibv_recv_wr rx_work_request[num];
+
   while (i < num) {
-    chunk = get_memory_manager()->get_rx_buffer(window);
+    chunk = get_memory_manager()->get_rx_buffer();
     chunk->self = chunk;
     if (chunk == NULL) {
       lderr(cct) << __func__ << " WARNING: out of memory. Requested " << num <<
@@ -974,11 +975,8 @@ int Infiniband::post_chunks_to_srq(int num, int window)
     } else {
       rx_work_request[i].next = &rx_work_request[i+1];
     }
-    rx_work_request[i].next = 0;
     rx_work_request[i].sg_list = &isge[i];
     rx_work_request[i].num_sge = 1;
-
-
     i++;
   }
   ibv_recv_wr *badworkrequest;
@@ -986,7 +984,6 @@ int Infiniband::post_chunks_to_srq(int num, int window)
   assert(ret == 0);
   ldout(cct, 20) << __func__ << " post " << i << " rx_request to srq" << ", ret = " << ret << dendl;
   return i;
-
 }
 
 Infiniband::CompletionChannel* Infiniband::create_comp_channel(CephContext *c)

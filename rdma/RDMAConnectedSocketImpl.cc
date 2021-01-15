@@ -413,9 +413,7 @@ ssize_t RDMAConnectedSocketImpl::zero_copy_read(bufferlist& bl, size_t len)
     if (!buffers.empty()) {
         notify();
     }
-    if(buffers.empty()){
-      dispatcher->notify_buffers_empty();
-    }
+
     if (read == 0 && error)
         return -error;
     return read == 0 ? -EAGAIN : read;
