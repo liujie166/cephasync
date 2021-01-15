@@ -774,7 +774,7 @@ void Infiniband::MemoryManager::dereg_memory(Chunk *c)
     if((--it->second) == 0){
       ibv_dereg_mr(c->mr);
       understanding_mr.erase(it);
-      ldout(cct, 0) << __func__ << " dereg..." << dendl;
+      //ldout(cct, 0) << __func__ << " dereg..." << dendl;
     }
   }
 }
