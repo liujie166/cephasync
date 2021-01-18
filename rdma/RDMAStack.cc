@@ -110,7 +110,8 @@ void RDMADispatcher::mr_malloc_and_register()
     int r = ::read(notify_malloc, &i, sizeof(i));
     if(done)
       break;
-    wait_to_add -= get_stack()->get_infiniband().post_chunks_to_srq(wait_to_add);
+    if(!wait_to_add)
+      wait_to_add -= get_stack()->get_infiniband().post_chunks_to_srq(wait_to_add);
   }
 }
 
