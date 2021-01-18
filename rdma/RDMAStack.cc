@@ -112,7 +112,6 @@ void RDMADispatcher::mr_malloc_and_register()
       break;
     cout <<"mallc chunk num " << i << "\n";
     if(i) {
-
       get_stack()->get_infiniband().post_chunks_to_srq(i);
     }
   }
@@ -129,7 +128,9 @@ void RDMADispatcher::polling_stop()
     return;
   t.join();
 
-  if(!memory_t.joinable())
+  uint64_t i =1;
+  ::write(notify_malloc, &i, sizeof(i));
+  if (!memory_t.joinable())
     return;
   memory_t.join();
 
