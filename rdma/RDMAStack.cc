@@ -233,7 +233,14 @@ void RDMADispatcher::polling()
       for (int i = 0; i < rx_ret; ++i) {
         ibv_wc* response = &wc[i];
         Chunk* chunk = reinterpret_cast<Chunk *>(response->wr_id);
+        uint64_t beg = Cycles::rdtsc();
         get_stack()->get_infiniband().dereg_memory(chunk);
+        //post_backlog -= get_stack()->get_infiniband().post_chunks_to_srq(post_backlog);
+        uint64_t end = Cycles::rdtsc();
+        auto time_us = Cycles::to_microseconds(end - beg, 0);
+        if(time_us)
+          ldout(cct, 0) << __func__ << " deregister use " << time_us << " us " << dendl;
+
         //cout << "polling, bptr addr = " << chunk->bptr << "\n";
         ldout(cct, 25) << __func__ << " got chunk=" << chunk << " bytes:" << response->byte_len << " opcode:" << response->opcode << dendl;
 
