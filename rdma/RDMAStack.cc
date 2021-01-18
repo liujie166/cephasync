@@ -249,14 +249,15 @@ void RDMADispatcher::polling()
       polled.clear();
 
        post_backlog += rx_ret;
-      //if(post_backlog > threshold) {
+       int threshold = cct->_conf->ms_async_rdma_receive_queue_len;
+       if(post_backlog > threshold) {
         //uint64_t beg = Cycles::rdtsc();
         //auto record = post_backlog;
         post_backlog -= get_stack()->get_infiniband().post_chunks_to_srq(post_backlog);
         //uint64_t end = Cycles::rdtsc();
         //ldout(cct, 0) << __func__ << " malloc and register use " << Cycles::to_microseconds(end - beg, 0) << " us "
         //              << ", totally " << record << " chunks" << dendl;
-      //}
+        }
     }
 
     if (!tx_ret && !rx_ret) {
