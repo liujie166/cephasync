@@ -277,8 +277,8 @@ void RDMADispatcher::polling()
         i.first->pass_wc(std::move(i.second));
       polled.clear();
 
-       post_backlog += rx_ret;
-       int threshold = cct->_conf->ms_async_rdma_receive_queue_len/4;
+       post_backlog += (uint64_t)rx_ret;
+       uint64_t threshold = cct->_conf->ms_async_rdma_receive_queue_len/4;
        if(post_backlog > threshold) {
          ::write(notify_malloc, &post_backlog, sizeof(post_backlog));
          post_backlog = 0;
