@@ -41,7 +41,7 @@ class RDMADispatcher {
   std::thread t;
   std::thread memory_t;
   int notify_malloc = -1;
-  int malloc_num = 0;
+
   CephContext *cct;
   Infiniband::CompletionQueue* tx_cq = nullptr;
   Infiniband::CompletionQueue* rx_cq = nullptr;
@@ -50,7 +50,7 @@ class RDMADispatcher {
   bool done = false;
   std::atomic<uint64_t> num_dead_queue_pair = {0};
   std::atomic<uint64_t> num_qp_conn = {0};
-  int post_backlog = 0;
+  uint64_t post_backlog = 0;
   Mutex lock; // protect `qp_conns`, `dead_queue_pairs`
   // qp_num -> InfRcConnection
   // The main usage of `qp_conns` is looking up connection by qp_num,

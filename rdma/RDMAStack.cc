@@ -105,13 +105,14 @@ void RDMADispatcher::polling_start()
 
 void RDMADispatcher::mr_malloc_and_register()
 {
-  int i = 0;
+  uint64_t i = 0;
   while(1){
     int r = ::read(notify_malloc, &i, sizeof(i));
     if(done)
       break;
+    cout <<"mallc chunk num " << i << "\n";
     if(i) {
-      cout <<"mallc chunk num " << i << "\n";
+
       get_stack()->get_infiniband().post_chunks_to_srq(i);
     }
   }
