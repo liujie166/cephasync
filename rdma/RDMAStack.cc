@@ -110,8 +110,8 @@ void RDMADispatcher::mr_malloc_and_register()
     int r = ::read(notify_malloc, &i, sizeof(i));
     if(done)
       break;
-    if(wait_to_add)
-      wait_to_add -= get_stack()->get_infiniband().post_chunks_to_srq(wait_to_add);
+    if(i)
+      get_stack()->get_infiniband().post_chunks_to_srq(i);
   }
 }
 
@@ -268,11 +268,9 @@ void RDMADispatcher::polling()
 
        post_backlog += rx_ret;
        int threshold = cct->_conf->ms_async_rdma_receive_queue_len/4;
-       int j =1;
        if(post_backlog > threshold) {
-         wait_to_add += post_backlog;
          post_backlog = 0;
-         ::write(notify_malloc, &j, sizeof(j));
+         ::write(notify_malloc, &post_backlog, sizeof(post_backlog));
         //uint64_t beg = Cycles::rdtsc();
         //auto record = post_backlog;
         //post_backlog -= get_stack()->get_infiniband().post_chunks_to_srq(post_backlog);
