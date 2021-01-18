@@ -110,8 +110,10 @@ void RDMADispatcher::mr_malloc_and_register()
     int r = ::read(notify_malloc, &i, sizeof(i));
     if(done)
       break;
-    if(i)
+    if(i) {
+      cout <<"mallc chunk num " << i << "\n";
       get_stack()->get_infiniband().post_chunks_to_srq(i);
+    }
   }
 }
 
@@ -233,6 +235,7 @@ void RDMADispatcher::polling()
       for (int i = 0; i < rx_ret; ++i) {
         ibv_wc* response = &wc[i];
         Chunk* chunk = reinterpret_cast<Chunk *>(response->wr_id);
+
         uint64_t beg = Cycles::rdtsc();
         get_stack()->get_infiniband().dereg_memory(chunk);
         //post_backlog -= get_stack()->get_infiniband().post_chunks_to_srq(post_backlog);
