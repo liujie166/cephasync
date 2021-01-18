@@ -101,6 +101,7 @@ class RDMADispatcher {
   void polling_start();
   void polling_stop();
   void polling();
+  void mr_malloc_and_register();
   int register_qp(QueuePair *qp, RDMAConnectedSocketImpl* csi);
   void make_pending_worker(RDMAWorker* w) {
     Mutex::Locker l(w_lock);
