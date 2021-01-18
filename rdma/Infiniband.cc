@@ -958,7 +958,7 @@ int Infiniband::post_chunks_to_srq(int num)
   ibv_sge isge[num];
   Chunk* chunk;
   ibv_recv_wr rx_work_request[num];
-  cout << "post chunk to srq num = " << num <<"\n";
+  //cout << "post chunk to srq num = " << num <<"\n";
   while (i < num) {
     chunk = get_memory_manager()->get_rx_buffer();
     chunk->self = chunk;
