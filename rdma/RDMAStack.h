@@ -39,6 +39,10 @@ class RDMADispatcher {
   typedef Infiniband::QueuePair QueuePair;
 
   std::thread t;
+  std::thread memory_t;
+  int notify_malloc = -1;
+  std::atomic<uint64_t> wait_to_add = {0};
+
   CephContext *cct;
   Infiniband::CompletionQueue* tx_cq = nullptr;
   Infiniband::CompletionQueue* rx_cq = nullptr;

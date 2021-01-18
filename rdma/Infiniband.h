@@ -214,6 +214,7 @@ class Infiniband {
       uint32_t bytes;
       uint32_t bound = 0;
       uint32_t offset;
+      int num = 0;
       char* buffer;// TODO: remove buffer/refactor TX
       char data[0];
     };

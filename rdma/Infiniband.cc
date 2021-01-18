@@ -741,7 +741,7 @@ char* Infiniband::MemoryManager::dynamic_malloc_chunk()
     bufferptr mem(num * (cct->_conf->ms_async_rdma_buffer_size));
 
     mr  = ibv_reg_mr(pd->pd, mem.c_str(), mem.length(), IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_LOCAL_WRITE);
-    understanding_mr.emplace(mr, num);
+    //understanding_mr.emplace(mr, num);
     //cout << "dynamic malloc, bptr addr is " << c->bptr << "\n";
     if(!mr){
         ldout(cct, 0) << __func__ << " register memory failed..." << dendl;
@@ -758,6 +758,7 @@ char* Infiniband::MemoryManager::dynamic_malloc_chunk()
       c->bytes   = cct->_conf->ms_async_rdma_buffer_size;
       c->lkey    = mr->lkey;
       c->offset  = 0;
+      c->num     = num;
       c->bptr    = new bufferptr(mem, i*c->bytes, c->bytes);
       c->buffer  = c->bptr->c_str();
       free_chunks.push_back(c);
@@ -776,6 +777,13 @@ void Infiniband::MemoryManager::dereg_memory(Chunk *c)
       understanding_mr.erase(it);
       //ldout(cct, 0) << __func__ << " dereg..." << dendl;
     }
+  } else{
+    int left_num = c->num - 1;
+    if(left_num == 0){
+      ibv_dereg_mr(c->mr);
+      return;
+    }
+    understanding_mr.emplace(c->mr, left_num);
   }
 }
 void Infiniband::MemoryManager::dynamic_free_chunk(Chunk *c)

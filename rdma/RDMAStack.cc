@@ -97,6 +97,21 @@ void RDMADispatcher::polling_start()
 
   t = std::thread(&RDMADispatcher::polling, this);
   ceph_pthread_setname(t.native_handle(), "rdma-polling");
+
+  notify_malloc = eventfd(0, EFD_CLOEXEC);
+  memory_t = std::thread(&RDMADispatcher::mr_malloc_and_register, this);
+  ceph_pthread_setname(t.native_handle(), "rdma-mr-generating");
+}
+
+void RDMADispatcher::mr_malloc_and_register()
+{
+  int i = 0;
+  while(1){
+    int r = ::read(notify_malloc, &i, sizeof(i));
+    if(done)
+      break;
+    wait_to_add -= get_stack()->get_infiniband().post_chunks_to_srq(wait_to_add);
+  }
 }
 
 void RDMADispatcher::polling_stop()
@@ -108,8 +123,11 @@ void RDMADispatcher::polling_stop()
 
   if (!t.joinable())
     return;
-
   t.join();
+
+  if(!memory_t.joinable())
+    return;
+  memory_t.join();
 
   tx_cc->ack_events();
   rx_cc->ack_events();
@@ -249,10 +267,14 @@ void RDMADispatcher::polling()
 
        post_backlog += rx_ret;
        int threshold = cct->_conf->ms_async_rdma_receive_queue_len/4;
+       int j =1;
        if(post_backlog > threshold) {
+         wait_to_add += post_backlog;
+         post_backlog = 0;
+         ::write(notify_malloc, &j, sizeof(j));
         //uint64_t beg = Cycles::rdtsc();
         //auto record = post_backlog;
-        post_backlog -= get_stack()->get_infiniband().post_chunks_to_srq(post_backlog);
+        //post_backlog -= get_stack()->get_infiniband().post_chunks_to_srq(post_backlog);
         //uint64_t end = Cycles::rdtsc();
         //ldout(cct, 0) << __func__ << " malloc and register use " << Cycles::to_microseconds(end - beg, 0) << " us "
         //              << ", totally " << record << " chunks" << dendl;
